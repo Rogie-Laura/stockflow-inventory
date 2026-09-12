@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StockFlow — SaaS Inventory System with POS & Monitoring
+
+A modern inventory + POS + monitoring SaaS built with **Next.js** and **Tailwind CSS**.
+
+## Features
+
+- **Point of Sale (POS)** — Product grid, cart, checkout, Cash/Card/E-Wallet, tax, discounts, receipts
+- **Monitoring Dashboard** — Live sales metrics, hourly charts, transaction feed, stock alerts, inventory health
+- **Inventory Management** — Products, categories, suppliers, stock tracking
+- **Analytics** — Revenue charts, top sellers, category breakdown
+- **Auth** — Supabase login/signup with per-user data (demo mode without Supabase)
+- **Dark Mode** — Light / dark / system theme toggle
+
+## Tech Stack
+
+- [Next.js 16](https://nextjs.org/) — App Router
+- [Tailwind CSS v4](https://tailwindcss.com/) — Styling
+- [shadcn/ui](https://ui.shadcn.com/) — UI Components
+- [Recharts](https://recharts.org/) — Charts & Analytics
+- [Lucide React](https://lucide.dev/) — Icons
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Run development server (demo mode — no Supabase needed)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the landing page.
+Navigate to [http://localhost:3000/dashboard](http://localhost:3000/dashboard) for the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase Setup (Auth + Database)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy `.env.local.example` to `.env.local` and fill in your keys
+3. Run the SQL migration in `supabase/migrations/20260312000000_inventory_schema.sql` via the Supabase SQL Editor
+4. Restart the dev server
 
-## Learn More
+Once configured, `/dashboard` requires login and data persists per user in Postgres with Row Level Security.
 
-To learn more about Next.js, take a look at the following resources:
+## Dark Mode
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Toggle light / dark / system theme from the navbar or dashboard header.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── page.tsx              # Landing page
+│   └── dashboard/
+│       ├── monitor/          # Live monitoring dashboard
+│       ├── pos/              # Point of Sale terminal
+│       ├── page.tsx          # Inventory overview
+│       ├── products/         # Product management
+│       ├── categories/       # Category management
+│       ├── suppliers/        # Supplier management
+│       ├── analytics/        # Analytics & charts
+│       └── settings/         # User settings
+├── components/
+│   ├── landing/              # Landing page components
+│   ├── dashboard/            # Dashboard components
+│   └── ui/                   # shadcn/ui components
+├── context/                  # React context providers
+├── lib/                      # Utilities & mock data
+└── types/                    # TypeScript types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
