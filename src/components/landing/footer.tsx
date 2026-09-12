@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export function Footer() {
   return (
@@ -7,27 +7,22 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
-                <Package className="h-4 w-4 text-white" />
-              </div>
-              <span className="text-lg font-bold">
-                Stock<span className="text-indigo-500">Flow</span>
-              </span>
+            <Link href="/">
+              <BrandLogo size="sm" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
-              Smart inventory management for modern businesses.
+              Inventory + POS + Monitoring — gawa para sa Pinoy negosyo.
             </p>
           </div>
 
           {[
             {
-              title: "Product",
-              links: ["Features", "Pricing", "Integrations", "Changelog"],
+              title: "Produkto",
+              links: ["Features", "Presyo", "Integrations"],
             },
             {
-              title: "Company",
-              links: ["About", "Blog", "Careers", "Contact"],
+              title: "Kumpanya",
+              links: ["About", "Blog", "Contact"],
             },
             {
               title: "Legal",
@@ -53,7 +48,8 @@ export function Footer() {
         </div>
 
         <div className="mt-12 border-t border-border/50 pt-8 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} StockFlow. All rights reserved.
+          &copy; {new Date().getFullYear()} PinoyStock. Lahat ng karapatan ay
+          nakalaan.
         </div>
       </div>
     </footer>

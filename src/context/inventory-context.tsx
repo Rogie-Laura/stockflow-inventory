@@ -49,7 +49,7 @@ function generateReceiptNo() {
   const date = new Date();
   const dateStr = date.toISOString().split("T")[0].replace(/-/g, "");
   const seq = String(Math.floor(Math.random() * 900) + 100);
-  return `SF-${dateStr}-${seq}`;
+  return `PS-${dateStr}-${seq}`;
 }
 
 interface CompleteSaleInput {

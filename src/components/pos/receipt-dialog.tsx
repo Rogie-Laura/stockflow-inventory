@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { formatPeso } from "@/lib/currency";
 
 interface ReceiptDialogProps {
   sale: Sale | null;
@@ -35,7 +36,7 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
 
         <div className="rounded-xl border border-dashed border-border/50 bg-muted/30 p-4 font-mono text-sm">
           <div className="text-center">
-            <p className="font-bold">StockFlow POS</p>
+            <p className="font-bold">PinoyStock POS</p>
             <p className="text-xs text-muted-foreground">
               {date.toLocaleDateString()} {date.toLocaleTimeString()}
             </p>
@@ -50,7 +51,7 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
               <span>
                 {item.productName} x{item.quantity}
               </span>
-              <span>${item.subtotal.toFixed(2)}</span>
+              <span>{formatPeso(item.subtotal)}</span>
             </div>
           ))}
 
@@ -59,21 +60,21 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
           <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>${sale.subtotal.toFixed(2)}</span>
+              <span>{formatPeso(sale.subtotal)}</span>
             </div>
             {sale.discount > 0 && (
               <div className="flex justify-between">
                 <span>Discount</span>
-                <span>-${sale.discount.toFixed(2)}</span>
+                <span>-{formatPeso(sale.discount)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span>Tax</span>
-              <span>${sale.tax.toFixed(2)}</span>
+              <span>{formatPeso(sale.tax)}</span>
             </div>
             <div className="flex justify-between font-bold">
               <span>TOTAL</span>
-              <span>${sale.total.toFixed(2)}</span>
+              <span>{formatPeso(sale.total)}</span>
             </div>
             <div className="flex justify-between capitalize">
               <span>Payment</span>
@@ -83,18 +84,18 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
               <>
                 <div className="flex justify-between">
                   <span>Paid</span>
-                  <span>${sale.amountPaid.toFixed(2)}</span>
+                  <span>{formatPeso(sale.amountPaid)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Change</span>
-                  <span>${sale.change.toFixed(2)}</span>
+                  <span>{formatPeso(sale.change)}</span>
                 </div>
               </>
             )}
           </div>
 
           <p className="mt-4 text-center text-[10px] text-muted-foreground">
-            Thank you for your purchase!
+            Salamat sa pagbili! Mabuhay ang Pinoy negosyo!
           </p>
         </div>
 

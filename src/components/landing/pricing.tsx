@@ -1,56 +1,60 @@
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const plans = [
   {
-    name: "Starter",
-    price: "Free",
-    period: "forever",
-    description: "Perfect for small businesses getting started.",
+    name: "Standard",
+    price: "₱100",
+    period: "/buwan",
+    annualNote: "₱1,200/taon",
+    description: "Para sa maliit na tindahan at startup na nagsisimula pa lang.",
     features: [
-      "Up to 100 products",
-      "1 warehouse location",
-      "Basic analytics",
-      "Email support",
+      "Hanggang 100 produkto",
+      "1 branch / bodega",
+      "POS terminal",
+      "Basic monitoring",
       "Low stock alerts",
+      "Email support",
     ],
-    cta: "Get Started",
+    cta: "Simulan Na",
     popular: false,
   },
   {
-    name: "Professional",
-    price: "$29",
-    period: "/month",
-    description: "For growing businesses that need more power.",
+    name: "Enterprise",
+    price: "₱200",
+    period: "/buwan",
+    annualNote: "₱2,400/taon",
+    description: "Para sa lumalaking negosyo na kailangan ng mas maraming power.",
     features: [
       "Unlimited products",
-      "5 warehouse locations",
+      "5 branches",
       "Advanced analytics",
-      "Priority support",
       "Supplier management",
-      "Team collaboration (5 users)",
-      "API access",
+      "Team (5 users)",
+      "Priority support",
+      "Transaction history",
     ],
-    cta: "Start Free Trial",
+    cta: "Subukan Libre",
     popular: true,
   },
   {
-    name: "Enterprise",
-    price: "$99",
-    period: "/month",
-    description: "For large organizations with complex needs.",
+    name: "Enterprise A Plus",
+    price: "₱1,500",
+    period: "/buwan",
+    annualNote: "₱17,100/taon",
+    description: "Para sa malalaking kumpanya at multi-branch operations.",
     features: [
-      "Everything in Professional",
-      "Unlimited locations",
+      "Lahat ng nasa Enterprise",
+      "Unlimited branches",
       "Custom integrations",
       "Dedicated account manager",
       "Unlimited team members",
       "SSO & advanced security",
-      "Custom reports",
+      "Custom reports & API",
     ],
-    cta: "Contact Sales",
+    cta: "Makipag-ugnayan",
     popular: false,
   },
 ];
@@ -61,14 +65,19 @@ export function Pricing() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Simple, Transparent{" "}
+            Presyong{" "}
             <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
-              Pricing
+              Abot-Kaya
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Choose the plan that fits your business. No hidden fees.
+            Piliin ang plan na swak sa negosyo mo. Walang hidden fees, pre!
           </p>
+
+          <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            <Sparkles className="h-4 w-4" />
+            Annual billing — tipid hanggang ₱900/taon!
+          </div>
         </div>
 
         <div className="mt-16 grid gap-8 lg:grid-cols-3">
@@ -83,7 +92,7 @@ export function Pricing() {
             >
               {plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-indigo-500 to-violet-600">
-                  Most Popular
+                  Pinaka-Sikat
                 </Badge>
               )}
               <div>
@@ -92,6 +101,9 @@ export function Pricing() {
                   <span className="text-4xl font-bold">{plan.price}</span>
                   <span className="text-muted-foreground">{plan.period}</span>
                 </div>
+                <p className="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                  {plan.annualNote} · save ₱900/taon (annual)
+                </p>
                 <p className="mt-3 text-sm text-muted-foreground">
                   {plan.description}
                 </p>

@@ -76,12 +76,12 @@ export function Features() {
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
             Inventory, POS & Monitoring —{" "}
             <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
-              All-in-One
+              Isang Platform Lang
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Everything your retail or warehouse business needs to sell, track,
-            and monitor in real time.
+            Lahat ng kailangan ng tindahan o bodega mo — magbenta, mag-track, at
+            mag-monitor in real time. Gawa para sa Pinoy!
           </p>
         </div>
 

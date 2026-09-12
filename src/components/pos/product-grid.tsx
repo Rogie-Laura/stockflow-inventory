@@ -5,6 +5,7 @@ import type { Category, Product } from "@/types/inventory";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatPeso } from "@/lib/currency";
 
 interface ProductGridProps {
   products: Product[];
@@ -100,7 +101,7 @@ export function ProductGrid({
               {product.sku}
             </p>
             <p className="mt-2 text-lg font-bold text-indigo-600 dark:text-indigo-400">
-              ${product.price.toFixed(2)}
+              {formatPeso(product.price)}
             </p>
           </button>
         ))}

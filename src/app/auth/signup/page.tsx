@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Package, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,18 +33,18 @@ export default function SignupPage() {
         <ThemeToggle />
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Supabase Not Configured</CardTitle>
+            <CardTitle>Hindi Pa Naka-setup ang Supabase</CardTitle>
             <CardDescription>
-              Add your Supabase credentials to .env.local to create an account,
-              or try demo mode first.
+              Ilagay ang Supabase credentials sa .env.local, o subukan muna ang
+              demo mode.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link href="/dashboard">Continue in Demo Mode</Link>
+              <Link href="/dashboard">Magpatuloy sa Demo Mode</Link>
             </Button>
             <Button variant="outline" asChild className="w-full">
-              <Link href="/">Back to Home</Link>
+              <Link href="/">Bumalik sa Home</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -71,7 +72,7 @@ export default function SignupPage() {
       return;
     }
 
-    toast.success("Account created! Check your email to confirm.");
+    toast.success("Account created! I-check ang email mo para i-confirm.");
     router.push("/auth/login");
   }
 
@@ -87,27 +88,22 @@ export default function SignupPage() {
 
       <Card className="w-full max-w-md border-border/50 shadow-xl">
         <CardHeader className="text-center">
-          <Link href="/" className="mx-auto mb-4 flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25">
-              <Package className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">
-              Stock<span className="text-indigo-500">Flow</span>
-            </span>
+          <Link href="/" className="mx-auto mb-4 flex justify-center">
+            <BrandLogo size="lg" />
           </Link>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
+          <CardTitle className="text-2xl">Gumawa ng account</CardTitle>
           <CardDescription>
-            Start managing your inventory for free
+            Simulan ang negosyo mo — simula ₱100/buwan lang!
           </CardDescription>
         </CardHeader>
 
         <form onSubmit={handleSignup}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">Buong Pangalan</Label>
               <Input
                 id="fullName"
-                placeholder="John Doe"
+                placeholder="Juan Dela Cruz"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -150,16 +146,16 @@ export default function SignupPage() {
                   Creating account...
                 </>
               ) : (
-                "Create Account"
+                "Gumawa ng Account"
               )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              May account ka na?{" "}
               <Link
                 href="/auth/login"
                 className="font-medium text-indigo-500 hover:underline"
               >
-                Sign in
+                Mag-login
               </Link>
             </p>
           </CardFooter>

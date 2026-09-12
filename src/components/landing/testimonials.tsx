@@ -4,25 +4,25 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 const testimonials = [
   {
     name: "Maria Santos",
-    role: "CEO, TechMart Philippines",
+    role: "May-ari, TechMart Quezon City",
     content:
-      "StockFlow transformed how we manage our 3 retail locations. The low stock alerts alone saved us thousands in lost sales.",
+      "PinoyStock ang nagpalaki ng negosyo namin! Yung low stock alerts lang, nakatipid na kami ng libo-libo sa lost sales.",
     initials: "MS",
     rating: 5,
   },
   {
     name: "James Chen",
-    role: "Operations Manager, GlobalTrade Co.",
+    role: "Operations Manager, Manila Trade Co.",
     content:
-      "The analytics dashboard gives us insights we never had before. We reduced overstock by 40% in the first month.",
+      "Sobrang dali gamitin ang POS at monitoring dashboard. Na-reduce namin ang overstock ng 40% sa unang buwan pa lang.",
     initials: "JC",
     rating: 5,
   },
   {
     name: "Sarah Johnson",
-    role: "Founder, EcoGoods Store",
+    role: "Founder, EcoGoods Davao",
     content:
-      "Beautiful interface and incredibly easy to use. My team was up and running in less than an hour. Highly recommended!",
+      "Maganda ang design at madaling intindihin. Within one hour, running na ang team namin. Highly recommended sa mga Pinoy SME!",
     initials: "SJ",
     rating: 5,
   },
@@ -34,13 +34,13 @@ export function Testimonials() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Loved by{" "}
+            Pinapahalagahan ng{" "}
             <span className="bg-gradient-to-r from-indigo-500 to-violet-500 bg-clip-text text-transparent">
-              Businesses Worldwide
+              Pinoy Negosyante
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            See what our customers have to say about StockFlow.
+            Basahin ang kwento ng mga customers namin sa buong Pilipinas.
           </p>
         </div>
 
@@ -63,7 +63,7 @@ export function Testimonials() {
               </p>
               <div className="mt-6 flex items-center gap-3">
                 <Avatar>
-                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-xs">
+                  <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-xs text-white">
                     {testimonial.initials}
                   </AvatarFallback>
                 </Avatar>

@@ -8,7 +8,6 @@ import {
   Boxes,
   LayoutDashboard,
   Monitor,
-  Package,
   Receipt,
   Settings,
   ShoppingCart,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/brand-logo";
 
 const navItems = [
   { href: "/dashboard/transactions", label: "Transactions", icon: Receipt, highlight: true },
@@ -55,13 +55,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-border/50 px-6">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600">
-              <Package className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-lg font-bold">
-              Stock<span className="text-indigo-500">Flow</span>
-            </span>
+          <Link href="/">
+            <BrandLogo size="sm" />
           </Link>
           <Button
             variant="ghost"
@@ -143,16 +138,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         <div className="border-t border-border/50 p-4">
           <Link href="/dashboard/pos">
             <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 transition-colors hover:from-emerald-500/15 hover:to-teal-500/15">
-              <p className="text-sm font-semibold">Quick Sale</p>
+              <p className="text-sm font-semibold">Mabilis na Benta</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Open POS terminal to process a sale
+                Buksan ang POS para mag-process ng sale
               </p>
               <Button
                 size="sm"
                 className="mt-3 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-xs hover:from-emerald-600 hover:to-teal-700"
               >
                 <ShoppingCart className="mr-1 h-3 w-3" />
-                Open POS
+                Buksan ang POS
               </Button>
             </div>
           </Link>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Package, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,18 +34,18 @@ export function LoginForm() {
         <ThemeToggle />
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Supabase Not Configured</CardTitle>
+            <CardTitle>Hindi Pa Naka-setup ang Supabase</CardTitle>
             <CardDescription>
-              Add your Supabase credentials to .env.local to enable
-              authentication, or continue in demo mode.
+              Ilagay ang Supabase credentials sa .env.local, o mag-demo mode
+              muna.
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link href="/dashboard">Continue in Demo Mode</Link>
+              <Link href="/dashboard">Magpatuloy sa Demo Mode</Link>
             </Button>
             <Button variant="outline" asChild className="w-full">
-              <Link href="/">Back to Home</Link>
+              <Link href="/">Bumalik sa Home</Link>
             </Button>
           </CardFooter>
         </Card>
@@ -68,7 +69,7 @@ export function LoginForm() {
       return;
     }
 
-    toast.success("Welcome back!");
+    toast.success("Welcome back, kabayan!");
     router.push(redirect);
     router.refresh();
   }
@@ -85,17 +86,12 @@ export function LoginForm() {
 
       <Card className="w-full max-w-md border-border/50 shadow-xl">
         <CardHeader className="text-center">
-          <Link href="/" className="mx-auto mb-4 flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25">
-              <Package className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold">
-              Stock<span className="text-indigo-500">Flow</span>
-            </span>
+          <Link href="/" className="mx-auto mb-4 flex justify-center">
+            <BrandLogo size="lg" />
           </Link>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardTitle className="text-2xl">Maligayang pagbabalik!</CardTitle>
           <CardDescription>
-            Sign in to your account to manage inventory
+            Mag-login para pamahalaan ang negosyo mo
           </CardDescription>
         </CardHeader>
 
@@ -137,16 +133,16 @@ export function LoginForm() {
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                "Mag-login"
               )}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{" "}
+              Wala pang account?{" "}
               <Link
                 href="/auth/signup"
                 className="font-medium text-indigo-500 hover:underline"
               >
-                Sign up
+                Mag-sign up
               </Link>
             </p>
           </CardFooter>

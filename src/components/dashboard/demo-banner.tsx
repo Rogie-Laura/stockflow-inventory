@@ -13,11 +13,11 @@ export function DemoBanner() {
     <div className="flex items-center justify-center gap-2 border-b border-indigo-500/20 bg-indigo-500/10 px-4 py-2 text-sm text-indigo-700 dark:text-indigo-300">
       <Info className="h-4 w-4 shrink-0" />
       <span>
-        Demo mode — data is stored locally.{" "}
+        Demo mode — naka-store lang locally ang data.{" "}
         <Link href="/auth/signup" className="font-medium underline">
-          Sign up
+          Mag-sign up
         </Link>{" "}
-        with Supabase to save to the cloud.
+        para ma-save sa cloud via Supabase.
       </span>
     </div>
   );

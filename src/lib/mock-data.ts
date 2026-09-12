@@ -298,7 +298,7 @@ export const categoryChartData = categories.map((c) => ({
 export const sales: Sale[] = [
   {
     id: "sale-1",
-    receiptNo: "SF-20260312-001",
+    receiptNo: "PS-20260312-001",
     items: [
       {
         productId: "prod-1",
@@ -331,7 +331,7 @@ export const sales: Sale[] = [
   },
   {
     id: "sale-2",
-    receiptNo: "SF-20260312-002",
+    receiptNo: "PS-20260312-002",
     items: [
       {
         productId: "prod-3",
@@ -355,7 +355,7 @@ export const sales: Sale[] = [
   },
   {
     id: "sale-3",
-    receiptNo: "SF-20260312-003",
+    receiptNo: "PS-20260312-003",
     items: [
       {
         productId: "prod-8",
@@ -388,7 +388,7 @@ export const sales: Sale[] = [
   },
   {
     id: "sale-4",
-    receiptNo: "SF-20260312-004",
+    receiptNo: "PS-20260312-004",
     items: [
       {
         productId: "prod-6",
@@ -412,7 +412,7 @@ export const sales: Sale[] = [
   },
   {
     id: "sale-5",
-    receiptNo: "SF-20260312-005",
+    receiptNo: "PS-20260312-005",
     items: [
       {
         productId: "prod-1",

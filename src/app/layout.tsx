@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "StockFlow — Smart Inventory Management",
+  title: "PinoyStock — Inventory, POS & Monitoring",
   description:
-    "Modern SaaS inventory management system. Track products, monitor stock levels, and grow your business with real-time analytics.",
+    "PinoyStock — ang all-in-one inventory, POS, at monitoring platform para sa Pinoy negosyo. Simula ₱100/buwan lang!",
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="fil"
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >

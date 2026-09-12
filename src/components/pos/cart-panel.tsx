@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { TAX_RATE } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
 
 const paymentMethods: { id: PaymentMethod; label: string; icon: string }[] = [
   { id: "cash", label: "Cash", icon: "💵" },
@@ -80,7 +81,7 @@ export function CartPanel({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{item.productName}</p>
                 <p className="text-xs text-muted-foreground">
-                  ${item.unitPrice.toFixed(2)} each
+                  {formatPeso(item.unitPrice)} bawat isa
                 </p>
               </div>
               <div className="flex items-center gap-1">
@@ -106,7 +107,7 @@ export function CartPanel({
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold">
-                  ${item.subtotal.toFixed(2)}
+                  {formatPeso(item.subtotal)}
                 </p>
                 <button
                   onClick={() => onRemove(item.productId)}
@@ -147,7 +148,7 @@ export function CartPanel({
 
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-muted-foreground">Discount ($)</label>
+              <label className="text-xs text-muted-foreground">Discount (₱)</label>
               <Input
                 type="number"
                 min="0"
@@ -162,7 +163,7 @@ export function CartPanel({
             {paymentMethod === "cash" && (
               <div>
                 <label className="text-xs text-muted-foreground">
-                  Amount Paid ($)
+                  Binayaran (₱)
                 </label>
                 <Input
                   type="number"
@@ -179,29 +180,29 @@ export function CartPanel({
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{formatPeso(subtotal)}</span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Discount</span>
-                <span>-${discount.toFixed(2)}</span>
+                <span>-{formatPeso(discount)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tax (12%)</span>
-              <span>${tax.toFixed(2)}</span>
+              <span>{formatPeso(tax)}</span>
             </div>
             <Separator />
             <div className="flex justify-between text-lg font-bold">
               <span>Total</span>
               <span className="text-indigo-600 dark:text-indigo-400">
-                ${total.toFixed(2)}
+                {formatPeso(total)}
               </span>
             </div>
             {paymentMethod === "cash" && paid > 0 && (
               <div className="flex justify-between text-emerald-600">
                 <span>Change</span>
-                <span>${change.toFixed(2)}</span>
+                <span>{formatPeso(change)}</span>
               </div>
             )}
           </div>
@@ -213,7 +214,7 @@ export function CartPanel({
               paymentMethod === "cash" && paid < total && paid > 0
             }
           >
-            Complete Sale — ${total.toFixed(2)}
+            Kumpletuhin ang Sale — {formatPeso(total)}
           </Button>
         </div>
       )}

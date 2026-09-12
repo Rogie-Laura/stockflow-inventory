@@ -1,4 +1,4 @@
-# StockFlow Deployment Guide
+# PinoyStock Deployment Guide
 
 ## Accounts
 - **Email:** rogie.josue.laura.30211111@gmail.com

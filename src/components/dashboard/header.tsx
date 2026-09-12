@@ -117,7 +117,7 @@ export function Header({ title, subtitle }: HeaderProps) {
             <DropdownMenuLabel>
               <div>{displayName}</div>
               <div className="text-xs font-normal text-muted-foreground">
-                {user?.email ?? "demo@stockflow.io"}
+                {user?.email ?? "demo@pinoystock.ph"}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
