@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DemoBanner } from "@/components/dashboard/demo-banner";
 import { InventoryProvider } from "@/context/inventory-context";
+import { StoreProvider } from "@/context/store-context";
 import { DashboardUIProvider, useDashboardUI } from "@/context/dashboard-ui-context";
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -25,10 +26,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <InventoryProvider>
-      <DashboardUIProvider>
-        <DashboardShell>{children}</DashboardShell>
-      </DashboardUIProvider>
-    </InventoryProvider>
+    <StoreProvider>
+      <InventoryProvider>
+        <DashboardUIProvider>
+          <DashboardShell>{children}</DashboardShell>
+        </DashboardUIProvider>
+      </InventoryProvider>
+    </StoreProvider>
   );
 }

@@ -14,23 +14,27 @@ import {
   ShoppingCart,
   Tags,
   Truck,
+  Users,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
+import { useStore } from "@/context/store-context";
+import { Badge } from "@/components/ui/badge";
 
 const navItems = [
-  { href: "/dashboard/transactions", label: "Transactions", icon: Receipt, highlight: true },
-  { href: "/dashboard/pos", label: "Point of Sale", icon: ShoppingCart, highlight: true },
-  { href: "/dashboard/monitor", label: "Monitor", icon: Monitor, highlight: true },
-  { href: "/dashboard", label: "Inventory", icon: LayoutDashboard },
-  { href: "/dashboard/products", label: "Products", icon: Boxes },
-  { href: "/dashboard/categories", label: "Categories", icon: Tags },
-  { href: "/dashboard/suppliers", label: "Suppliers", icon: Truck },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/billing", label: "Billing (GCash)", icon: CreditCard },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/transactions", label: "Transactions", icon: Receipt, highlight: true, adminOnly: false },
+  { href: "/dashboard/pos", label: "Point of Sale", icon: ShoppingCart, highlight: true, adminOnly: false },
+  { href: "/dashboard/monitor", label: "Monitor", icon: Monitor, highlight: true, adminOnly: true },
+  { href: "/dashboard", label: "Inventory", icon: LayoutDashboard, adminOnly: true },
+  { href: "/dashboard/products", label: "Products", icon: Boxes, adminOnly: true },
+  { href: "/dashboard/categories", label: "Categories", icon: Tags, adminOnly: true },
+  { href: "/dashboard/suppliers", label: "Suppliers", icon: Truck, adminOnly: true },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, adminOnly: true },
+  { href: "/dashboard/team", label: "Store & Team", icon: Users, adminOnly: true },
+  { href: "/dashboard/billing", label: "Billing (GCash)", icon: CreditCard, adminOnly: true },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -40,6 +44,15 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { store, role, selectedTerminal } = useStore();
+
+  const visibleItems = navItems.filter((item) => {
+    if (role === "cashier") return !item.adminOnly;
+    return true;
+  });
+
+  const operations = visibleItems.filter((i) => i.highlight);
+  const management = visibleItems.filter((i) => !i.highlight);
 
   return (
     <>
@@ -70,11 +83,29 @@ export function Sidebar({ open, onClose }: SidebarProps) {
           </Button>
         </div>
 
-        <nav className="flex-1 space-y-1 p-4">
+        {store && (
+          <div className="border-b border-border/50 px-4 py-3">
+            <p className="truncate text-sm font-semibold">{store.name}</p>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {role && (
+                <Badge variant="secondary" className="text-[10px]">
+                  {role.replace("_", " ")}
+                </Badge>
+              )}
+              {selectedTerminal && (
+                <Badge variant="outline" className="text-[10px]">
+                  {selectedTerminal.code}
+                </Badge>
+              )}
+            </div>
+          </div>
+        )}
+
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Operations
           </p>
-          {navItems.slice(0, 2).map((item) => {
+          {operations.map((item) => {
             const isActive =
               pathname === item.href ||
               pathname.startsWith(item.href + "/");
@@ -105,36 +136,40 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             );
           })}
 
-          <p className="mb-2 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Management
-          </p>
-          {navItems.slice(2).map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          {management.length > 0 && (
+            <>
+              <p className="mb-2 mt-4 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Management
+              </p>
+              {management.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-600 dark:text-indigo-400"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5",
-                    isActive ? "text-indigo-500" : ""
-                  )}
-                />
-                {item.label}
-              </Link>
-            );
-          })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                      isActive
+                        ? "bg-gradient-to-r from-indigo-500/10 to-violet-500/10 text-indigo-600 dark:text-indigo-400"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <item.icon
+                      className={cn(
+                        "h-5 w-5",
+                        isActive ? "text-indigo-500" : ""
+                      )}
+                    />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="border-t border-border/50 p-4">

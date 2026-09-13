@@ -1,19 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Monitor, Store } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { ProductGrid } from "@/components/pos/product-grid";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ReceiptDialog } from "@/components/pos/receipt-dialog";
+import { TerminalPicker } from "@/components/pos/terminal-picker";
 import { useInventory } from "@/context/inventory-context";
+import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export default function POSPage() {
   const { products, categories, completeSale } = useInventory();
+  const { selectedTerminal, role, terminals } = useStore();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -22,6 +26,13 @@ export default function POSPage() {
   const [amountPaid, setAmountPaid] = useState("");
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [terminalPickerOpen, setTerminalPickerOpen] = useState(false);
+
+  useEffect(() => {
+    if (!selectedTerminal && terminals.length > 0) {
+      setTerminalPickerOpen(true);
+    }
+  }, [selectedTerminal, terminals.length]);
 
   function addToCart(product: Product) {
     if (product.quantity <= 0) {
@@ -61,6 +72,23 @@ export default function POSPage() {
     });
   }
 
+  function handleScanSku(code: string) {
+    const trimmed = code.trim();
+    if (!trimmed) return;
+
+    const product = products.find(
+      (p) => p.sku.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (product) {
+      addToCart(product);
+      setSearch("");
+      toast.success(`Added: ${product.name}`);
+    } else {
+      toast.error(`No product found for SKU: ${trimmed}`);
+    }
+  }
+
   function updateQty(productId: string, delta: number) {
     setCart((prev) =>
       prev
@@ -88,6 +116,12 @@ export default function POSPage() {
   }
 
   async function handleCheckout() {
+    if (!selectedTerminal) {
+      setTerminalPickerOpen(true);
+      toast.error("Piliin muna ang POS terminal");
+      return;
+    }
+
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
@@ -110,7 +144,6 @@ export default function POSPage() {
         paymentMethod,
         amountPaid: paid,
         discount,
-        cashierName: "John Doe",
       });
 
       setCompletedSale(sale);
@@ -119,8 +152,10 @@ export default function POSPage() {
       setDiscount(0);
       setAmountPaid("");
       toast.success("Sale completed!");
-    } catch {
-      toast.error("Failed to complete sale");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to complete sale"
+      );
     }
   }
 
@@ -128,20 +163,51 @@ export default function POSPage() {
     <>
       <Header
         title="Point of Sale"
-        subtitle="Process sales and manage checkout"
+        subtitle={
+          selectedTerminal
+            ? `${selectedTerminal.code} · ${selectedTerminal.name}`
+            : "Piliin ang terminal"
+        }
       />
 
       <main className="flex flex-1 flex-col overflow-hidden p-4 lg:flex-row lg:gap-4 lg:p-6">
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Store className="h-4 w-4" />
-            POS Terminal
+            {selectedTerminal?.code ?? "POS Terminal"}
           </div>
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/monitor">
-              <Monitor className="mr-1 h-4 w-4" />
-              Monitor
-            </Link>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setTerminalPickerOpen(true)}
+            >
+              Switch POS
+            </Button>
+            {role !== "cashier" && (
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/dashboard/monitor">
+                  <Monitor className="mr-1 h-4 w-4" />
+                  Monitor
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-3 hidden items-center gap-2 lg:flex">
+          {selectedTerminal && (
+            <Badge variant="outline" className="text-emerald-600">
+              {selectedTerminal.code} · {selectedTerminal.name}
+            </Badge>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => setTerminalPickerOpen(true)}
+          >
+            Palitan ang terminal
           </Button>
         </div>
 
@@ -151,6 +217,7 @@ export default function POSPage() {
             categories={categories}
             search={search}
             onSearchChange={setSearch}
+            onScanSubmit={handleScanSku}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
             onAddToCart={addToCart}
@@ -173,6 +240,11 @@ export default function POSPage() {
           />
         </div>
       </main>
+
+      <TerminalPicker
+        open={terminalPickerOpen}
+        onOpenChange={setTerminalPickerOpen}
+      />
 
       <ReceiptDialog
         sale={completedSale}

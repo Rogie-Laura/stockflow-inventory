@@ -24,6 +24,8 @@ import {
   insertProduct,
   insertSale,
 } from "@/lib/inventory-db";
+import { formatPeso } from "@/lib/currency";
+import { useStore } from "@/context/store-context";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type {
   Activity,
@@ -57,7 +59,9 @@ interface CompleteSaleInput {
   paymentMethod: PaymentMethod;
   amountPaid: number;
   discount: number;
-  cashierName: string;
+  terminalId?: string;
+  terminalCode?: string;
+  terminalName?: string;
 }
 
 interface InventoryContextValue {
@@ -84,6 +88,7 @@ interface InventoryContextValue {
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
+  const { store, selectedTerminal, displayName } = useStore();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -113,7 +118,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, [refresh, store?.id]);
 
   const addActivity = useCallback((activity: Omit<Activity, "id">) => {
     setActivities((prev) => [
@@ -124,6 +129,15 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const completeSale = useCallback(
     async (input: CompleteSaleInput): Promise<Sale> => {
+      const terminal = selectedTerminal;
+      const terminalId = input.terminalId ?? terminal?.id;
+      const terminalCode = input.terminalCode ?? terminal?.code;
+      const terminalName = input.terminalName ?? terminal?.name;
+
+      if (!isDemoMode && (!store || !terminalId)) {
+        throw new Error("Piliin muna ang POS terminal");
+      }
+
       const subtotal = input.items.reduce((sum, i) => sum + i.subtotal, 0);
       const tax = (subtotal - input.discount) * TAX_RATE;
       const total = subtotal - input.discount + tax;
@@ -140,7 +154,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         paymentMethod: input.paymentMethod,
         amountPaid: input.amountPaid,
         change,
-        cashierName: input.cashierName,
+        cashierName: displayName,
+        terminalId,
+        terminalCode,
+        terminalName,
+        storeId: store?.id,
         createdAt: new Date().toISOString(),
       };
 
@@ -160,7 +178,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
         addActivity({
           type: "sale_completed",
-          message: `Sale ${sale.receiptNo} — $${total.toFixed(2)} via ${input.paymentMethod}`,
+          message: `Sale ${sale.receiptNo} — ${formatPeso(total)} via ${input.paymentMethod}`,
           timestamp: sale.createdAt,
         });
 
@@ -171,13 +189,22 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!user || !store || !terminalId) throw new Error("Not authenticated");
 
-      const saved = await insertSale(supabase, user.id, sale);
+      await insertSale(
+        supabase,
+        {
+          storeId: store.id,
+          terminalId,
+          cashierId: user.id,
+          cashierName: displayName,
+        },
+        sale
+      );
       await refresh();
-      return saved;
+      return sale;
     },
-    [isDemoMode, addActivity, refresh]
+    [isDemoMode, addActivity, refresh, store, selectedTerminal, displayName]
   );
 
   const addProduct = useCallback(
@@ -209,12 +236,12 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !store) return;
 
-      await insertProduct(supabase, user.id, product);
+      await insertProduct(supabase, user.id, store.id, product);
       await refresh();
     },
-    [isDemoMode, addActivity, refresh]
+    [isDemoMode, addActivity, refresh, store]
   );
 
   const updateProduct = useCallback(
@@ -271,12 +298,12 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !store) return;
 
-      await insertCategory(supabase, user.id, category);
+      await insertCategory(supabase, user.id, store.id, category);
       await refresh();
     },
-    [isDemoMode, refresh]
+    [isDemoMode, refresh, store]
   );
 
   const deleteCategory = useCallback(

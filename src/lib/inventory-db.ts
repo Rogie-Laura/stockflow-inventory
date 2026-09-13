@@ -30,7 +30,7 @@ export async function fetchInventory(supabase: SupabaseClient) {
         .limit(20),
       supabase
         .from(TABLES.sale)
-        .select(`*, ${TABLES.saleItem}(*)`)
+        .select(`*, ${TABLES.saleItem}(*), ${TABLES.posTerminal}(code, name)`)
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
@@ -94,6 +94,11 @@ export async function fetchInventory(supabase: SupabaseClient) {
       subtotal: number;
     }[];
 
+    const terminal = (s[TABLES.posTerminal] ?? s.inv_pos_terminal) as
+      | { code: string; name: string }
+      | null
+      | undefined;
+
     return {
       id: s.id,
       receiptNo: s.receipt_no,
@@ -116,6 +121,11 @@ export async function fetchInventory(supabase: SupabaseClient) {
       amountPaid: Number(s.amount_paid),
       change: Number(s.change_amount),
       cashierName: s.cashier_name,
+      terminalId: s.terminal_id ?? undefined,
+      terminalCode: terminal?.code,
+      terminalName: terminal?.name,
+      cashierId: s.cashier_id ?? s.user_id ?? undefined,
+      storeId: s.store_id ?? undefined,
       createdAt: s.created_at,
     };
   });
@@ -123,15 +133,25 @@ export async function fetchInventory(supabase: SupabaseClient) {
   return { products, categories, suppliers, activities, sales };
 }
 
+export interface InsertSaleParams {
+  storeId: string;
+  terminalId: string;
+  cashierId: string;
+  cashierName: string;
+}
+
 export async function insertSale(
   supabase: SupabaseClient,
-  userId: string,
+  params: InsertSaleParams,
   sale: Sale
 ) {
   const { data: saleData, error: saleError } = await supabase
     .from(TABLES.sale)
     .insert({
-      user_id: userId,
+      user_id: params.cashierId,
+      store_id: params.storeId,
+      terminal_id: params.terminalId,
+      cashier_id: params.cashierId,
       receipt_no: sale.receiptNo,
       subtotal: sale.subtotal,
       tax: sale.tax,
@@ -140,7 +160,7 @@ export async function insertSale(
       payment_method: sale.paymentMethod,
       amount_paid: sale.amountPaid,
       change_amount: sale.change,
-      cashier_name: sale.cashierName,
+      cashier_name: params.cashierName,
     })
     .select()
     .single();
@@ -165,23 +185,16 @@ export async function insertSale(
   if (itemsError) throw itemsError;
 
   for (const item of sale.items) {
-    const { data: product } = await supabase
-      .from(TABLES.item)
-      .select("quantity, min_stock")
-      .eq("id", item.productId)
-      .single();
-
-    if (product) {
-      const newQty = Math.max(0, product.quantity - item.quantity);
-      await supabase
-        .from(TABLES.item)
-        .update({ quantity: newQty })
-        .eq("id", item.productId);
-    }
+    const { error: stockError } = await supabase.rpc("inv_decrement_stock", {
+      p_item_id: item.productId,
+      p_qty: item.quantity,
+    });
+    if (stockError) throw stockError;
   }
 
   await supabase.from(TABLES.activity).insert({
-    user_id: userId,
+    user_id: params.cashierId,
+    store_id: params.storeId,
     type: "sale_completed",
     message: `Sale ${sale.receiptNo} — ${formatPeso(sale.total)} via ${sale.paymentMethod}`,
   });
@@ -192,12 +205,14 @@ export async function insertSale(
 export async function insertProduct(
   supabase: SupabaseClient,
   userId: string,
+  storeId: string,
   product: Omit<Product, "id" | "status" | "createdAt">
 ) {
   const { data, error } = await supabase
     .from(TABLES.item)
     .insert({
       user_id: userId,
+      store_id: storeId,
       name: product.name,
       sku: product.sku,
       category_id: product.categoryId || null,
@@ -216,6 +231,7 @@ export async function insertProduct(
 
   await supabase.from(TABLES.activity).insert({
     user_id: userId,
+    store_id: storeId,
     type: "product_added",
     message: `New product "${product.name}" added to inventory`,
   });
@@ -234,12 +250,14 @@ export async function deleteProductDb(
 export async function insertCategory(
   supabase: SupabaseClient,
   userId: string,
+  storeId: string,
   category: Omit<Category, "id" | "productCount">
 ) {
   const { data, error } = await supabase
     .from(TABLES.category)
     .insert({
       user_id: userId,
+      store_id: storeId,
       name: category.name,
       description: category.description,
       color: category.color,

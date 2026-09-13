@@ -55,8 +55,17 @@ export async function POST(request: Request) {
         ? PLANS[planId].monthlyAmount
         : PLANS[planId].annualAmount;
 
+    const { data: membership } = await supabase
+      .from(TABLES.storeMember)
+      .select("store_id")
+      .eq("user_id", user.id)
+      .eq("role", "store_admin")
+      .limit(1)
+      .maybeSingle();
+
     await supabase.from(TABLES.subscription).insert({
       user_id: user.id,
+      store_id: membership?.store_id ?? null,
       plan_id: planId,
       billing_cycle: billingCycle,
       status: "pending",

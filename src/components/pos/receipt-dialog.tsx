@@ -41,6 +41,9 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
               {date.toLocaleDateString()} {date.toLocaleTimeString()}
             </p>
             <p className="mt-1 text-xs">Receipt: {sale.receiptNo}</p>
+            {sale.terminalCode && (
+              <p className="text-xs">Terminal: {sale.terminalCode}</p>
+            )}
             <p className="text-xs">Cashier: {sale.cashierName}</p>
           </div>
 

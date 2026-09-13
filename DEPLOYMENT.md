@@ -22,6 +22,9 @@
 | `inv_sale_item` | Sale line items |
 | `inv_activity` | Audit log |
 | `inv_subscription` | GCash billing |
+| `inv_store` | Store / business entity |
+| `inv_store_member` | Team roles (store_admin, cashier) |
+| `inv_pos_terminal` | POS counters (POS-01, POS-02, POS-03) |
 
 ### Auth Redirect URLs (required — do this once)
 In [Supabase Auth Settings](https://supabase.com/dashboard/project/spwrebtvdolfqeolmwbe/auth/url-configuration):

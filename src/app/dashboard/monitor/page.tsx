@@ -17,14 +17,18 @@ import { HourlySalesChart } from "@/components/monitor/hourly-sales-chart";
 import { SalesFeed } from "@/components/monitor/sales-feed";
 import { InventoryHealth } from "@/components/monitor/inventory-health";
 import { TopProducts } from "@/components/monitor/top-products";
+import { TerminalSales } from "@/components/monitor/terminal-sales";
 import { useInventory } from "@/context/inventory-context";
+import { useStore } from "@/context/store-context";
 import { hourlySalesData } from "@/lib/mock-data";
+import { formatPeso } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 export default function MonitorPage() {
   const { products, sales, activities } = useInventory();
+  const { terminals } = useStore();
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function MonitorPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             title="Today's Sales"
-            value={`$${metrics.todaySales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            value={formatPeso(metrics.todaySales)}
             change={metrics.salesChange}
             icon={DollarSign}
             gradient="from-emerald-500 to-teal-600"
@@ -95,7 +99,7 @@ export default function MonitorPage() {
           />
           <StatCard
             title="Avg Order Value"
-            value={`$${metrics.avgOrderValue.toFixed(2)}`}
+            value={formatPeso(metrics.avgOrderValue)}
             icon={TrendingUp}
             gradient="from-violet-500 to-purple-600"
           />
@@ -115,6 +119,7 @@ export default function MonitorPage() {
         </div>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
+          <TerminalSales sales={sales} terminals={terminals} />
           <SalesFeed sales={sales} />
           <TopProducts sales={sales} />
 

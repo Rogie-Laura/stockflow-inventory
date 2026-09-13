@@ -14,6 +14,7 @@ import {
 import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { useInventory } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
 import type { PaymentMethod, Sale } from "@/types/inventory";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -241,6 +242,7 @@ export default function TransactionsPage() {
                     <TableHead>Date</TableHead>
                     <TableHead className="hidden md:table-cell">Items</TableHead>
                     <TableHead className="hidden lg:table-cell">Payment</TableHead>
+                    <TableHead className="hidden lg:table-cell">Terminal</TableHead>
                     <TableHead className="hidden lg:table-cell">Cashier</TableHead>
                     <TableHead>Total</TableHead>
                     <TableHead className="w-10" />
@@ -275,11 +277,14 @@ export default function TransactionsPage() {
                             {pm.label}
                           </span>
                         </TableCell>
+                        <TableCell className="hidden lg:table-cell font-mono text-xs">
+                          {sale.terminalCode ?? "—"}
+                        </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">
                           {sale.cashierName}
                         </TableCell>
                         <TableCell className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          ${sale.total.toFixed(2)}
+                          {formatPeso(sale.total)}
                         </TableCell>
                         <TableCell>
                           <Button

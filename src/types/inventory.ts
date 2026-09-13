@@ -65,6 +65,11 @@ export interface Sale {
   amountPaid: number;
   change: number;
   cashierName: string;
+  terminalId?: string;
+  terminalCode?: string;
+  terminalName?: string;
+  cashierId?: string;
+  storeId?: string;
   createdAt: string;
 }
 

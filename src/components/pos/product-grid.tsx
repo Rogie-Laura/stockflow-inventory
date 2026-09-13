@@ -12,6 +12,7 @@ interface ProductGridProps {
   categories: Category[];
   search: string;
   onSearchChange: (value: string) => void;
+  onScanSubmit?: (code: string) => void;
   selectedCategory: string;
   onCategoryChange: (id: string) => void;
   onAddToCart: (product: Product) => void;
@@ -22,6 +23,7 @@ export function ProductGrid({
   categories,
   search,
   onSearchChange,
+  onScanSubmit,
   selectedCategory,
   onCategoryChange,
   onAddToCart,
@@ -41,10 +43,17 @@ export function ProductGrid({
         <div className="relative flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search products or scan SKU..."
+            placeholder="Search products or scan SKU / QR..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && onScanSubmit) {
+                e.preventDefault();
+                onScanSubmit(search);
+              }
+            }}
             className="pl-9"
+            autoFocus
           />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
