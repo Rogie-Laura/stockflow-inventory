@@ -1,0 +1,1 @@
+-- Deprecated: subscriptions moved to inv_subscription in 20260913000000_inv_schema.sql

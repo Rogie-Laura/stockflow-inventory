@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Monitor,
   Receipt,
+  CreditCard,
   Settings,
   ShoppingCart,
   Tags,
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/dashboard/categories", label: "Categories", icon: Tags },
   { href: "/dashboard/suppliers", label: "Suppliers", icon: Truck },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/dashboard/billing", label: "Billing (GCash)", icon: CreditCard },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 

@@ -2,10 +2,22 @@ import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { PlanId } from "@/lib/plans";
 
-const plans = [
+const plans: {
+  name: string;
+  planId: PlanId;
+  price: string;
+  period: string;
+  annualNote: string;
+  description: string;
+  features: string[];
+  cta: string;
+  popular: boolean;
+}[] = [
   {
     name: "Standard",
+    planId: "standard",
     price: "₱100",
     period: "/buwan",
     annualNote: "₱1,200/taon",
@@ -18,11 +30,12 @@ const plans = [
       "Low stock alerts",
       "Email support",
     ],
-    cta: "Simulan Na",
+    cta: "Magbayad via GCash",
     popular: false,
   },
   {
     name: "Enterprise",
+    planId: "enterprise",
     price: "₱200",
     period: "/buwan",
     annualNote: "₱2,400/taon",
@@ -36,11 +49,12 @@ const plans = [
       "Priority support",
       "Transaction history",
     ],
-    cta: "Subukan Libre",
+    cta: "Magbayad via GCash",
     popular: true,
   },
   {
     name: "Enterprise A Plus",
+    planId: "enterprise_a_plus",
     price: "₱1,500",
     period: "/buwan",
     annualNote: "₱17,100/taon",
@@ -54,7 +68,7 @@ const plans = [
       "SSO & advanced security",
       "Custom reports & API",
     ],
-    cta: "Makipag-ugnayan",
+    cta: "Magbayad via GCash",
     popular: false,
   },
 ];
@@ -71,12 +85,13 @@ export function Pricing() {
             </span>
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Piliin ang plan na swak sa negosyo mo. Walang hidden fees, pre!
+            Piliin ang plan na swak sa negosyo mo. Bayad via GCash — walang
+            hidden fees!
           </p>
 
           <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
             <Sparkles className="h-4 w-4" />
-            Annual billing — tipid hanggang ₱900/taon!
+            GCash accepted · Annual billing tipid hanggang ₱900/taon
           </div>
         </div>
 
@@ -122,12 +137,14 @@ export function Pricing() {
                 asChild
                 className={`mt-8 w-full ${
                   plan.popular
-                    ? "bg-gradient-to-r from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-violet-700"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25 hover:from-emerald-600 hover:to-teal-700"
                     : ""
                 }`}
                 variant={plan.popular ? "default" : "outline"}
               >
-                <Link href="/dashboard">{plan.cta}</Link>
+                <Link href={`/dashboard/billing?plan=${plan.planId}`}>
+                  {plan.cta}
+                </Link>
               </Button>
             </div>
           ))}

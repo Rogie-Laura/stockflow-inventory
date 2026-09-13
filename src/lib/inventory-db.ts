@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { TABLES } from "@/lib/db-tables";
+import { formatPeso } from "@/lib/currency";
 import type {
   Activity,
   Category,
@@ -18,17 +20,17 @@ function getStatus(quantity: number, minStock: number): ProductStatus {
 export async function fetchInventory(supabase: SupabaseClient) {
   const [productsRes, categoriesRes, suppliersRes, activitiesRes, salesRes] =
     await Promise.all([
-      supabase.from("products").select("*").order("created_at", { ascending: false }),
-      supabase.from("categories").select("*").order("name"),
-      supabase.from("suppliers").select("*").order("name"),
+      supabase.from(TABLES.item).select("*").order("created_at", { ascending: false }),
+      supabase.from(TABLES.category).select("*").order("name"),
+      supabase.from(TABLES.supplier).select("*").order("name"),
       supabase
-        .from("activities")
+        .from(TABLES.activity)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(20),
       supabase
-        .from("sales")
-        .select("*, sale_items(*)")
+        .from(TABLES.sale)
+        .select(`*, ${TABLES.saleItem}(*)`)
         .order("created_at", { ascending: false })
         .limit(50),
     ]);
@@ -81,38 +83,42 @@ export async function fetchInventory(supabase: SupabaseClient) {
     timestamp: a.created_at,
   }));
 
-  const sales: Sale[] = (salesRes.data ?? []).map((s) => ({
-    id: s.id,
-    receiptNo: s.receipt_no,
-    items: (s.sale_items ?? []).map(
-      (item: {
-        product_id: string;
-        product_name: string;
-        sku: string;
-        image: string;
-        quantity: number;
-        unit_price: number;
-        subtotal: number;
-      }): SaleItem => ({
-        productId: item.product_id,
-        productName: item.product_name,
-        sku: item.sku,
-        image: item.image ?? "📦",
-        quantity: item.quantity,
-        unitPrice: Number(item.unit_price),
-        subtotal: Number(item.subtotal),
-      })
-    ),
-    subtotal: Number(s.subtotal),
-    tax: Number(s.tax),
-    discount: Number(s.discount),
-    total: Number(s.total),
-    paymentMethod: s.payment_method,
-    amountPaid: Number(s.amount_paid),
-    change: Number(s.change_amount),
-    cashierName: s.cashier_name,
-    createdAt: s.created_at,
-  }));
+  const sales: Sale[] = (salesRes.data ?? []).map((s) => {
+    const lineItems = (s[TABLES.saleItem] ?? s.inv_sale_item ?? []) as {
+      product_id: string;
+      product_name: string;
+      sku: string;
+      image: string;
+      quantity: number;
+      unit_price: number;
+      subtotal: number;
+    }[];
+
+    return {
+      id: s.id,
+      receiptNo: s.receipt_no,
+      items: lineItems.map(
+        (item): SaleItem => ({
+          productId: item.product_id,
+          productName: item.product_name,
+          sku: item.sku,
+          image: item.image ?? "📦",
+          quantity: item.quantity,
+          unitPrice: Number(item.unit_price),
+          subtotal: Number(item.subtotal),
+        })
+      ),
+      subtotal: Number(s.subtotal),
+      tax: Number(s.tax),
+      discount: Number(s.discount),
+      total: Number(s.total),
+      paymentMethod: s.payment_method,
+      amountPaid: Number(s.amount_paid),
+      change: Number(s.change_amount),
+      cashierName: s.cashier_name,
+      createdAt: s.created_at,
+    };
+  });
 
   return { products, categories, suppliers, activities, sales };
 }
@@ -123,7 +129,7 @@ export async function insertSale(
   sale: Sale
 ) {
   const { data: saleData, error: saleError } = await supabase
-    .from("sales")
+    .from(TABLES.sale)
     .insert({
       user_id: userId,
       receipt_no: sale.receiptNo,
@@ -153,14 +159,14 @@ export async function insertSale(
   }));
 
   const { error: itemsError } = await supabase
-    .from("sale_items")
+    .from(TABLES.saleItem)
     .insert(saleItems);
 
   if (itemsError) throw itemsError;
 
   for (const item of sale.items) {
     const { data: product } = await supabase
-      .from("products")
+      .from(TABLES.item)
       .select("quantity, min_stock")
       .eq("id", item.productId)
       .single();
@@ -168,16 +174,16 @@ export async function insertSale(
     if (product) {
       const newQty = Math.max(0, product.quantity - item.quantity);
       await supabase
-        .from("products")
+        .from(TABLES.item)
         .update({ quantity: newQty })
         .eq("id", item.productId);
     }
   }
 
-  await supabase.from("activities").insert({
+  await supabase.from(TABLES.activity).insert({
     user_id: userId,
     type: "sale_completed",
-    message: `Sale ${sale.receiptNo} — $${sale.total.toFixed(2)} via ${sale.paymentMethod}`,
+    message: `Sale ${sale.receiptNo} — ${formatPeso(sale.total)} via ${sale.paymentMethod}`,
   });
 
   return sale;
@@ -189,7 +195,7 @@ export async function insertProduct(
   product: Omit<Product, "id" | "status" | "createdAt">
 ) {
   const { data, error } = await supabase
-    .from("products")
+    .from(TABLES.item)
     .insert({
       user_id: userId,
       name: product.name,
@@ -208,7 +214,7 @@ export async function insertProduct(
 
   if (error) throw error;
 
-  await supabase.from("activities").insert({
+  await supabase.from(TABLES.activity).insert({
     user_id: userId,
     type: "product_added",
     message: `New product "${product.name}" added to inventory`,
@@ -221,7 +227,7 @@ export async function deleteProductDb(
   supabase: SupabaseClient,
   id: string
 ) {
-  const { error } = await supabase.from("products").delete().eq("id", id);
+  const { error } = await supabase.from(TABLES.item).delete().eq("id", id);
   if (error) throw error;
 }
 
@@ -231,7 +237,7 @@ export async function insertCategory(
   category: Omit<Category, "id" | "productCount">
 ) {
   const { data, error } = await supabase
-    .from("categories")
+    .from(TABLES.category)
     .insert({
       user_id: userId,
       name: category.name,
@@ -249,6 +255,6 @@ export async function deleteCategoryDb(
   supabase: SupabaseClient,
   id: string
 ) {
-  const { error } = await supabase.from("categories").delete().eq("id", id);
+  const { error } = await supabase.from(TABLES.category).delete().eq("id", id);
   if (error) throw error;
 }
