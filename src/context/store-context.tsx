@@ -17,6 +17,16 @@ import {
   isPosLocked as readPosLocked,
   setPosLocked,
 } from "@/lib/pos-lock";
+import {
+  applyDemoSessions,
+  clearDemoTerminalSession,
+  clearPosSession,
+  isTerminalInUse,
+  loadPosOperator,
+  loadPosSessionTerminalId,
+  savePosSession,
+  setDemoTerminalSession,
+} from "@/lib/pos-session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type { PosTerminal, Store, StoreMember, StoreRole } from "@/types/store";
 import { toast } from "sonner";
@@ -24,12 +34,20 @@ import { toast } from "sonner";
 const TERMINAL_STORAGE_KEY = "pinoystock_terminal";
 const DEMO_POS_PIN = "1234";
 
+export interface ActivatePosPayload {
+  terminalId: string;
+  operatorName: string;
+  pin: string;
+}
+
 interface StoreContextValue {
   store: Store | null;
   role: StoreRole | null;
   terminals: PosTerminal[];
   members: StoreMember[];
   displayName: string;
+  posOperatorName: string | null;
+  isPosSessionActive: boolean;
   selectedTerminal: PosTerminal | null;
   setSelectedTerminal: (terminal: PosTerminal) => void;
   loading: boolean;
@@ -38,7 +56,9 @@ interface StoreContextValue {
   canManageInventory: boolean;
   canManageTeam: boolean;
   verifyPosPin: (pin: string) => Promise<boolean>;
-  activatePosLock: (pin: string) => Promise<boolean>;
+  activatePosSession: (
+    payload: ActivatePosPayload
+  ) => Promise<{ ok: boolean; error?: string }>;
   deactivatePosLock: (pin: string) => Promise<boolean>;
   setPosPin: (pin: string) => Promise<boolean>;
   refresh: () => Promise<void>;
@@ -62,8 +82,25 @@ const DEMO_TERMINALS: PosTerminal[] = [
 
 function loadStoredTerminal(storeId: string, terminals: PosTerminal[]) {
   if (typeof window === "undefined") return terminals[0] ?? null;
+  const sessionId = loadPosSessionTerminalId(storeId);
+  if (sessionId) {
+    const sessionTerminal = terminals.find((t) => t.id === sessionId);
+    if (sessionTerminal) return sessionTerminal;
+  }
   const savedId = localStorage.getItem(`${TERMINAL_STORAGE_KEY}_${storeId}`);
-  return terminals.find((t) => t.id === savedId) ?? terminals[0] ?? null;
+  return terminals.find((t) => t.id === savedId) ?? null;
+}
+
+function restorePosSession(
+  storeId: string,
+  terminals: PosTerminal[]
+): { terminal: PosTerminal | null; operator: string | null } {
+  if (!readPosLocked(storeId)) {
+    return { terminal: null, operator: null };
+  }
+  const operator = loadPosOperator(storeId);
+  const terminal = loadStoredTerminal(storeId, terminals);
+  return { terminal, operator };
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -74,22 +111,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [store, setStore] = useState<Store | null>(isDemoMode ? DEMO_STORE : null);
   const [role, setRole] = useState<StoreRole | null>(isDemoMode ? "store_admin" : null);
   const [terminals, setTerminals] = useState<PosTerminal[]>(
-    isDemoMode ? DEMO_TERMINALS : []
+    isDemoMode ? applyDemoSessions(DEMO_TERMINALS) : []
   );
   const [members, setMembers] = useState<StoreMember[]>([]);
   const [displayName, setDisplayName] = useState("Demo Admin");
-  const [selectedTerminal, setSelectedTerminalState] = useState<PosTerminal | null>(
-    isDemoMode ? DEMO_TERMINALS[0] : null
-  );
+  const [posOperatorName, setPosOperatorName] = useState<string | null>(null);
+  const [selectedTerminal, setSelectedTerminalState] = useState<PosTerminal | null>(null);
   const [loading, setLoading] = useState(!isDemoMode);
   const [posLocked, setPosLockedState] = useState(false);
 
-  const syncPosLock = useCallback((storeId: string | undefined) => {
+  const syncPosLock = useCallback((storeId: string | undefined, nextTerminals: PosTerminal[]) => {
     if (!storeId) {
       setPosLockedState(false);
+      setPosOperatorName(null);
       return;
     }
-    setPosLockedState(readPosLocked(storeId));
+
+    const locked = readPosLocked(storeId);
+    setPosLockedState(locked);
+
+    if (locked) {
+      const { terminal, operator } = restorePosSession(storeId, nextTerminals);
+      if (terminal) setSelectedTerminalState(terminal);
+      if (operator) setPosOperatorName(operator);
+    }
   }, []);
 
   const setSelectedTerminal = useCallback(
@@ -121,30 +166,128 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [store, isDemoMode]
   );
 
-  const activatePosLock = useCallback(
-    async (pin: string): Promise<boolean> => {
-      const ok = await verifyPosPin(pin);
-      if (ok && store) {
+  const activatePosSession = useCallback(
+    async ({
+      terminalId,
+      operatorName,
+      pin,
+    }: ActivatePosPayload): Promise<{ ok: boolean; error?: string }> => {
+      if (!store) {
+        return { ok: false, error: "Walang store na naka-link." };
+      }
+
+      const terminal = terminals.find((t) => t.id === terminalId);
+      if (!terminal) {
+        return { ok: false, error: "Hindi mahanap ang terminal." };
+      }
+
+      if (isTerminalInUse(terminal)) {
+        return {
+          ok: false,
+          error: `${terminal.code} ginagamit pa ni ${terminal.activeOperator}.`,
+        };
+      }
+
+      if (isDemoMode) {
+        if (pin !== DEMO_POS_PIN) {
+          return { ok: false, error: "Maling POS PIN." };
+        }
+
+        setDemoTerminalSession(terminalId, operatorName);
+        const nextTerminals = applyDemoSessions(DEMO_TERMINALS);
+        const activeTerminal = nextTerminals.find((t) => t.id === terminalId) ?? terminal;
+
+        setTerminals(nextTerminals);
+        setSelectedTerminal(activeTerminal);
+        setPosOperatorName(operatorName);
         setPosLocked(store.id);
         setPosLockedState(true);
-        toast.success("POS mode activated — POS lang ang access sa device na ito.");
+        savePosSession(store.id, terminalId, operatorName);
+        toast.success(`${activeTerminal.code} activated — ${operatorName}`);
+        return { ok: true };
       }
-      return ok;
+
+      if (!store.hasPosPin) {
+        return { ok: false, error: "Mag-set muna ng POS PIN sa Settings." };
+      }
+
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("inv_claim_pos_terminal", {
+        p_terminal_id: terminalId,
+        p_operator_name: operatorName,
+        p_pin: pin,
+      });
+
+      if (error) {
+        if (error.message.includes("Terminal in use")) {
+          return { ok: false, error: error.message.replace("Terminal in use by ", "Ginagamit pa ni ") };
+        }
+        if (error.message.includes("Operator name")) {
+          return { ok: false, error: "Ilagay ang pangalan ng gagamit ng POS." };
+        }
+        return { ok: false, error: error.message };
+      }
+
+      if (!data) {
+        return { ok: false, error: "Maling POS PIN." };
+      }
+
+      const activeTerminal: PosTerminal = {
+        ...terminal,
+        activeOperator: operatorName,
+        activatedAt: new Date().toISOString(),
+      };
+
+      setTerminals((prev) =>
+        prev.map((t) => (t.id === terminalId ? activeTerminal : t))
+      );
+      setSelectedTerminal(activeTerminal);
+      setPosOperatorName(operatorName);
+      setPosLocked(store.id);
+      setPosLockedState(true);
+      savePosSession(store.id, terminalId, operatorName);
+      toast.success(`${activeTerminal.code} activated — ${operatorName}`);
+      return { ok: true };
     },
-    [verifyPosPin, store]
+    [store, terminals, isDemoMode, setSelectedTerminal]
   );
 
   const deactivatePosLock = useCallback(
     async (pin: string): Promise<boolean> => {
+      if (!store) return false;
+
       const ok = await verifyPosPin(pin);
-      if (ok) {
-        clearPosLock();
-        setPosLockedState(false);
-        toast.success("POS mode na-exit — buong dashboard available na ulit.");
+      if (!ok) return false;
+
+      if (selectedTerminal) {
+        if (isDemoMode) {
+          clearDemoTerminalSession(selectedTerminal.id);
+          setTerminals(applyDemoSessions(DEMO_TERMINALS));
+        } else {
+          const supabase = createClient();
+          await supabase.rpc("inv_release_pos_terminal", {
+            p_terminal_id: selectedTerminal.id,
+            p_pin: pin,
+          });
+          setTerminals((prev) =>
+            prev.map((t) =>
+              t.id === selectedTerminal.id
+                ? { ...t, activeOperator: null, activatedAt: null }
+                : t
+            )
+          );
+        }
       }
-      return ok;
+
+      clearPosLock();
+      clearPosSession(store.id);
+      setPosLockedState(false);
+      setPosOperatorName(null);
+      setSelectedTerminalState(null);
+      toast.success("POS mode na-exit — buong dashboard available na ulit.");
+      return true;
     },
-    [verifyPosPin]
+    [verifyPosPin, store, selectedTerminal, isDemoMode]
   );
 
   const setPosPin = useCallback(
@@ -174,7 +317,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (isDemoMode) {
-      syncPosLock(DEMO_STORE.id);
+      const nextTerminals = applyDemoSessions(DEMO_TERMINALS);
+      setTerminals(nextTerminals);
+      syncPosLock(DEMO_STORE.id, nextTerminals);
       return;
     }
 
@@ -208,8 +353,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTerminals(ctx.terminals);
       setMembers(ctx.members);
       setDisplayName(ctx.displayName);
-      setSelectedTerminalState(loadStoredTerminal(ctx.store.id, ctx.terminals));
-      syncPosLock(ctx.store.id);
+      syncPosLock(ctx.store.id, ctx.terminals);
     } catch {
       toast.error("Failed to load store context");
     } finally {
@@ -236,6 +380,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [loading, isDemoMode, role, pathname, router, store, posLocked]);
 
+  const isPosSessionActive = Boolean(
+    posLocked && selectedTerminal && posOperatorName
+  );
+
   const value = useMemo(
     () => ({
       store,
@@ -243,6 +391,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       terminals,
       members,
       displayName,
+      posOperatorName,
+      isPosSessionActive,
       selectedTerminal,
       setSelectedTerminal,
       loading,
@@ -251,7 +401,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       canManageInventory: canManageInventory(role, posLocked),
       canManageTeam: canManageTeam(role) && !posLocked,
       verifyPosPin,
-      activatePosLock,
+      activatePosSession,
       deactivatePosLock,
       setPosPin,
       refresh,
@@ -262,13 +412,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       terminals,
       members,
       displayName,
+      posOperatorName,
+      isPosSessionActive,
       selectedTerminal,
       setSelectedTerminal,
       loading,
       isDemoMode,
       posLocked,
       verifyPosPin,
-      activatePosLock,
+      activatePosSession,
       deactivatePosLock,
       setPosPin,
       refresh,

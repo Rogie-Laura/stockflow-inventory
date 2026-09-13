@@ -79,6 +79,8 @@ export async function fetchStoreContext(
       code: t.code,
       name: t.name,
       isActive: t.is_active,
+      activeOperator: t.active_operator ?? null,
+      activatedAt: t.activated_at ?? null,
     })),
     members: memberList,
     displayName: userMetaName || userEmail?.split("@")[0] || "Cashier",

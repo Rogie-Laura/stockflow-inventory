@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Monitor, Store } from "lucide-react";
+import { Lock, Monitor, Store } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { ProductGrid } from "@/components/pos/product-grid";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ReceiptDialog } from "@/components/pos/receipt-dialog";
-import { TerminalPicker } from "@/components/pos/terminal-picker";
-import { PosActivationDialog } from "@/components/pos/pos-activation-dialog";
+import { PosActivateModal } from "@/components/pos/pos-activate-modal";
 import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
@@ -20,11 +19,14 @@ export default function POSPage() {
   const { products, categories, completeSale } = useInventory();
   const {
     selectedTerminal,
+    posOperatorName,
+    isPosSessionActive,
     role,
     terminals,
     store,
-    isPosLocked,
-    activatePosLock,
+    displayName,
+    activatePosSession,
+    refresh,
   } = useStore();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -34,27 +36,13 @@ export default function POSPage() {
   const [amountPaid, setAmountPaid] = useState("");
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
-  const [terminalPickerOpen, setTerminalPickerOpen] = useState(false);
-  const [activationOpen, setActivationOpen] = useState(false);
-
-  const isAdmin = role === "store_admin" || role === "supervisor";
+  const [activateOpen, setActivateOpen] = useState(false);
 
   useEffect(() => {
-    if (!selectedTerminal && terminals.length > 0) {
-      setTerminalPickerOpen(true);
+    if (activateOpen) {
+      refresh();
     }
-  }, [selectedTerminal, terminals.length]);
-
-  useEffect(() => {
-    if (
-      isAdmin &&
-      !isPosLocked &&
-      selectedTerminal &&
-      !terminalPickerOpen
-    ) {
-      setActivationOpen(true);
-    }
-  }, [isAdmin, isPosLocked, selectedTerminal, terminalPickerOpen]);
+  }, [activateOpen, refresh]);
 
   function addToCart(product: Product) {
     if (product.quantity <= 0) {
@@ -138,9 +126,9 @@ export default function POSPage() {
   }
 
   async function handleCheckout() {
-    if (!selectedTerminal) {
-      setTerminalPickerOpen(true);
-      toast.error("Piliin muna ang POS terminal");
+    if (!isPosSessionActive) {
+      setActivateOpen(true);
+      toast.error("I-activate muna ang POS bago mag-checkout.");
       return;
     }
 
@@ -181,31 +169,48 @@ export default function POSPage() {
     }
   }
 
+  const subtitle = isPosSessionActive
+    ? `${selectedTerminal?.code} · ${posOperatorName}`
+    : "I-activate ang POS para magsimula";
+
   return (
     <>
-      <Header
-        title="Point of Sale"
-        subtitle={
-          selectedTerminal
-            ? `${selectedTerminal.code} · ${selectedTerminal.name}`
-            : "Piliin ang terminal"
-        }
-      />
+      <Header title="Point of Sale" subtitle={subtitle} />
+
+      {!isPosSessionActive && (
+        <div className="mx-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:mx-6">
+          <div>
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+              POS hindi pa activated sa device na ito
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Piliin ang terminal, ilagay ang pangalan ng cashier, at ang POS PIN.
+            </p>
+          </div>
+          <Button
+            className="bg-gradient-to-r from-emerald-500 to-teal-600"
+            onClick={() => setActivateOpen(true)}
+          >
+            <Lock className="mr-2 h-4 w-4" />
+            Activate POS
+          </Button>
+        </div>
+      )}
 
       <main className="flex flex-1 flex-col overflow-hidden p-4 lg:flex-row lg:gap-4 lg:p-6">
         <div className="mb-4 flex items-center justify-between lg:hidden">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Store className="h-4 w-4" />
-            {selectedTerminal?.code ?? "POS Terminal"}
+            {isPosSessionActive
+              ? `${selectedTerminal?.code} · ${posOperatorName}`
+              : "Hindi activated"}
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setTerminalPickerOpen(true)}
-            >
-              Switch POS
-            </Button>
+            {!isPosSessionActive && (
+              <Button size="sm" onClick={() => setActivateOpen(true)}>
+                Activate POS
+              </Button>
+            )}
             {role !== "cashier" && (
               <Button variant="outline" size="sm" asChild>
                 <Link href="/dashboard/monitor">
@@ -218,19 +223,14 @@ export default function POSPage() {
         </div>
 
         <div className="mb-3 hidden items-center gap-2 lg:flex">
-          {selectedTerminal && (
-            <Badge variant="outline" className="text-emerald-600">
-              {selectedTerminal.code} · {selectedTerminal.name}
-            </Badge>
+          {isPosSessionActive && (
+            <>
+              <Badge variant="outline" className="text-emerald-600">
+                {selectedTerminal?.code} · {posOperatorName}
+              </Badge>
+              <Badge className="bg-emerald-600 text-[10px]">POS Active</Badge>
+            </>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-xs"
-            onClick={() => setTerminalPickerOpen(true)}
-          >
-            Palitan ang terminal
-          </Button>
         </div>
 
         <div className="flex-1 overflow-hidden lg:pr-0">
@@ -263,28 +263,12 @@ export default function POSPage() {
         </div>
       </main>
 
-      <TerminalPicker
-        open={terminalPickerOpen}
-        onOpenChange={(open) => {
-          setTerminalPickerOpen(open);
-          if (!open && selectedTerminal && isAdmin && !isPosLocked) {
-            setActivationOpen(true);
-          }
-        }}
-      />
-
-      <PosActivationDialog
-        open={activationOpen}
-        terminal={selectedTerminal}
-        onConfirm={async (pin) => {
-          if (!store?.hasPosPin) {
-            toast.error("Mag-set muna ng POS PIN sa Settings.");
-            return false;
-          }
-          return activatePosLock(pin);
-        }}
-        onSkip={() => setActivationOpen(false)}
-        onClose={() => setActivationOpen(false)}
+      <PosActivateModal
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        terminals={terminals}
+        defaultOperatorName={displayName}
+        onActivate={activatePosSession}
       />
 
       <ReceiptDialog

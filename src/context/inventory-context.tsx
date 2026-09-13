@@ -88,7 +88,8 @@ interface InventoryContextValue {
 const InventoryContext = createContext<InventoryContextValue | null>(null);
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
-  const { store, selectedTerminal, displayName } = useStore();
+  const { store, selectedTerminal, posOperatorName, displayName } = useStore();
+  const cashierName = posOperatorName ?? displayName;
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
@@ -154,7 +155,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         paymentMethod: input.paymentMethod,
         amountPaid: input.amountPaid,
         change,
-        cashierName: displayName,
+        cashierName,
         terminalId,
         terminalCode,
         terminalName,
@@ -197,14 +198,14 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
           storeId: store.id,
           terminalId,
           cashierId: user.id,
-          cashierName: displayName,
+          cashierName,
         },
         sale
       );
       await refresh();
       return sale;
     },
-    [isDemoMode, addActivity, refresh, store, selectedTerminal, displayName]
+    [isDemoMode, addActivity, refresh, store, selectedTerminal, cashierName]
   );
 
   const addProduct = useCallback(

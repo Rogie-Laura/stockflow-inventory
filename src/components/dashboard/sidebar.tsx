@@ -8,6 +8,7 @@ import {
   BarChart3,
   Boxes,
   LayoutDashboard,
+  Lock,
   LockOpen,
   Monitor,
   Receipt,
@@ -20,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { ExitPosDialog } from "@/components/pos/exit-pos-dialog";
+import { PosActivateModal } from "@/components/pos/pos-activate-modal";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -47,9 +49,21 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { store, role, selectedTerminal, isPosLocked, deactivatePosLock } =
-    useStore();
+  const {
+    store,
+    role,
+    selectedTerminal,
+    posOperatorName,
+    isPosSessionActive,
+    isPosLocked,
+    terminals,
+    displayName,
+    activatePosSession,
+    deactivatePosLock,
+    refresh,
+  } = useStore();
   const [exitPosOpen, setExitPosOpen] = useState(false);
+  const [activateOpen, setActivateOpen] = useState(false);
 
   const posOnlyMode = role === "cashier" || isPosLocked;
 
@@ -60,6 +74,12 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   const operations = visibleItems.filter((i) => i.highlight);
   const management = visibleItems.filter((i) => !i.highlight);
+
+  function openActivateModal() {
+    refresh();
+    setActivateOpen(true);
+    onClose();
+  }
 
   return (
     <>
@@ -99,9 +119,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   {role.replace("_", " ")}
                 </Badge>
               )}
-              {selectedTerminal && (
+              {isPosSessionActive && selectedTerminal && (
                 <Badge variant="outline" className="text-[10px]">
-                  {selectedTerminal.code}
+                  {selectedTerminal.code} · {posOperatorName}
                 </Badge>
               )}
               {isPosLocked && (
@@ -193,21 +213,21 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               Exit POS Mode (kailangan PIN)
             </Button>
           ) : (
-            <Link href="/dashboard/pos">
-              <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 transition-colors hover:from-emerald-500/15 hover:to-teal-500/15">
-                <p className="text-sm font-semibold">Mabilis na Benta</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Buksan ang POS para mag-process ng sale
-                </p>
-                <Button
-                  size="sm"
-                  className="mt-3 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-xs hover:from-emerald-600 hover:to-teal-700"
-                >
+            <div className="space-y-2">
+              <Button
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600"
+                onClick={openActivateModal}
+              >
+                <Lock className="mr-2 h-4 w-4" />
+                Activate POS
+              </Button>
+              <Link href="/dashboard/pos" onClick={onClose}>
+                <Button variant="outline" className="mt-2 w-full text-xs">
                   <ShoppingCart className="mr-1 h-3 w-3" />
                   Buksan ang POS
                 </Button>
-              </div>
-            </Link>
+              </Link>
+            </div>
           )}
         </div>
       </aside>
@@ -216,6 +236,14 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         open={exitPosOpen}
         onOpenChange={setExitPosOpen}
         onConfirm={deactivatePosLock}
+      />
+
+      <PosActivateModal
+        open={activateOpen}
+        onOpenChange={setActivateOpen}
+        terminals={terminals}
+        defaultOperatorName={displayName}
+        onActivate={activatePosSession}
       />
     </>
   );

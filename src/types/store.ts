@@ -23,4 +23,6 @@ export interface PosTerminal {
   code: string;
   name: string;
   isActive: boolean;
+  activeOperator?: string | null;
+  activatedAt?: string | null;
 }
