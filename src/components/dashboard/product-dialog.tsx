@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,29 +22,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInventory } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
+import {
+  MARGIN_OPTIONS,
+  PRODUCT_UNITS,
+  calcProfitAmount,
+  calcSellingPrice,
+  getUnitLabel,
+} from "@/lib/product-units";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
 export function ProductDialog() {
-  const { categories, suppliers, addProduct } = useInventory();
+  const { categories, addProduct } = useInventory();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
     sku: "",
     categoryId: "",
-    supplierId: "",
-    price: "",
+    unit: "pc",
     cost: "",
+    marginPercent: "10",
     quantity: "",
     minStock: "",
     description: "",
     image: "📦",
   });
 
+  const costValue = parseFloat(form.cost) || 0;
+  const marginValue = parseFloat(form.marginPercent) || 0;
+
+  const sellingPrice = useMemo(
+    () => calcSellingPrice(costValue, marginValue),
+    [costValue, marginValue]
+  );
+
+  const profitAmount = useMemo(
+    () => calcProfitAmount(costValue, sellingPrice),
+    [costValue, sellingPrice]
+  );
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.sku || !form.categoryId || !form.supplierId) {
-      toast.error("Please fill in all required fields");
+    if (!form.name || !form.sku || !form.categoryId) {
+      toast.error("Punan ang lahat ng required fields");
+      return;
+    }
+
+    if (costValue <= 0) {
+      toast.error("Ilagay ang puhunan (cost) sa pesos");
+      return;
+    }
+
+    if (!marginValue || marginValue <= 0 || marginValue >= 100) {
+      toast.error("Pumili ng valid na tubo %");
       return;
     }
 
@@ -53,24 +84,25 @@ export function ProductDialog() {
         name: form.name,
         sku: form.sku,
         categoryId: form.categoryId,
-        supplierId: form.supplierId,
-        price: parseFloat(form.price) || 0,
-        cost: parseFloat(form.cost) || 0,
+        unit: form.unit,
+        marginPercent: marginValue,
+        price: sellingPrice,
+        cost: costValue,
         quantity: parseInt(form.quantity) || 0,
         minStock: parseInt(form.minStock) || 10,
         description: form.description,
         image: form.image,
       });
 
-      toast.success("Product added successfully!");
+      toast.success("Na-add na ang produkto!");
       setOpen(false);
       setForm({
         name: "",
         sku: "",
         categoryId: "",
-        supplierId: "",
-        price: "",
+        unit: "pc",
         cost: "",
+        marginPercent: "10",
         quantity: "",
         minStock: "",
         description: "",
@@ -80,6 +112,8 @@ export function ProductDialog() {
       toast.error("Failed to add product");
     }
   }
+
+  const unitLabel = getUnitLabel(form.unit);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -91,29 +125,29 @@ export function ProductDialog() {
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>Magdagdag ng Produkto</DialogTitle>
           <DialogDescription>
-            Fill in the details to add a new product to your inventory.
+            Ilagay ang detalye ng paninda. Presyo sa pesos (₱).
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">Product Name *</Label>
+              <Label htmlFor="name">Pangalan ng Produkto *</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Wireless Headphones"
+                placeholder="hal. Bigas Dinorado"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU *</Label>
+              <Label htmlFor="sku">SKU / Barcode *</Label>
               <Input
                 id="sku"
                 value={form.sku}
                 onChange={(e) => setForm({ ...form, sku: e.target.value })}
-                placeholder="WBH-001"
+                placeholder="BRG-001"
               />
             </div>
           </div>
@@ -126,7 +160,7 @@ export function ProductDialog() {
                 onValueChange={(v) => setForm({ ...form, categoryId: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Pumili ng category" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -138,18 +172,18 @@ export function ProductDialog() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Supplier *</Label>
+              <Label>Unit / Yunit</Label>
               <Select
-                value={form.supplierId}
-                onValueChange={(v) => setForm({ ...form, supplierId: v })}
+                value={form.unit}
+                onValueChange={(v) => setForm({ ...form, unit: v })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select supplier" />
+                  <SelectValue placeholder="Pumili ng unit" />
                 </SelectTrigger>
                 <SelectContent>
-                  {suppliers.map((sup) => (
-                    <SelectItem key={sup.id} value={sup.id}>
-                      {sup.name}
+                  {PRODUCT_UNITS.map((unit) => (
+                    <SelectItem key={unit.value} value={unit.value}>
+                      {unit.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -159,35 +193,59 @@ export function ProductDialog() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="price">Price ($)</Label>
-              <Input
-                id="price"
-                type="number"
-                step="0.01"
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="79.99"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cost">Cost ($)</Label>
+              <Label htmlFor="cost">Puhunan / Cost (₱) *</Label>
               <Input
                 id="cost"
                 type="number"
                 step="0.01"
+                min="0"
                 value={form.cost}
                 onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                placeholder="45.00"
+                placeholder="100.00"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Tubo / Margin (%)</Label>
+              <Select
+                value={form.marginPercent}
+                onValueChange={(v) => setForm({ ...form, marginPercent: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pumili ng tubo %" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MARGIN_OPTIONS.map((pct) => (
+                    <SelectItem key={pct} value={String(pct)}>
+                      {pct}% kikitain sa presyo
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Presyo ng bentahan</span>
+              <span className="text-lg font-semibold text-emerald-700 dark:text-emerald-300">
+                {formatPeso(sellingPrice)}
+              </span>
+            </div>
+            {costValue > 0 && marginValue > 0 && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Tubo: {formatPeso(profitAmount)} ({marginValue}% ng presyo) ·
+                bawat {unitLabel.toLowerCase()}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
+              <Label htmlFor="quantity">Quantity ({unitLabel})</Label>
               <Input
                 id="quantity"
                 type="number"
+                min="0"
                 value={form.quantity}
                 onChange={(e) =>
                   setForm({ ...form, quantity: e.target.value })
@@ -196,10 +254,11 @@ export function ProductDialog() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="minStock">Min Stock Level</Label>
+              <Label htmlFor="minStock">Minimum Stock</Label>
               <Input
                 id="minStock"
                 type="number"
+                min="0"
                 value={form.minStock}
                 onChange={(e) =>
                   setForm({ ...form, minStock: e.target.value })
@@ -217,7 +276,7 @@ export function ProductDialog() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              placeholder="Product description..."
+              placeholder="Detalye ng produkto..."
               rows={3}
             />
           </div>

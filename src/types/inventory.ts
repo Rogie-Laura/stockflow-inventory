@@ -32,7 +32,9 @@ export interface Product {
   name: string;
   sku: string;
   categoryId: string;
-  supplierId: string;
+  supplierId?: string;
+  unit: string;
+  marginPercent: number;
   price: number;
   cost: number;
   quantity: number;

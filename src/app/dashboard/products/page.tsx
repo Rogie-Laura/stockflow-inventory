@@ -6,6 +6,8 @@ import { Header } from "@/components/dashboard/header";
 import { ProductDialog } from "@/components/dashboard/product-dialog";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { useInventory } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
+import { getUnitLabel } from "@/lib/product-units";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -27,7 +29,7 @@ import { toast } from "sonner";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
-  const { products, categories, suppliers, deleteProduct } = useInventory();
+  const { products, categories, deleteProduct } = useInventory();
 
   const filtered = products.filter(
     (p) =>
@@ -76,9 +78,7 @@ export default function ProductsPage() {
                     <TableHead className="hidden md:table-cell">
                       Category
                     </TableHead>
-                    <TableHead className="hidden lg:table-cell">
-                      Supplier
-                    </TableHead>
+                    <TableHead className="hidden lg:table-cell">Unit</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Qty</TableHead>
                     <TableHead>Status</TableHead>
@@ -89,9 +89,6 @@ export default function ProductsPage() {
                   {filtered.map((product) => {
                     const category = categories.find(
                       (c) => c.id === product.categoryId
-                    );
-                    const supplier = suppliers.find(
-                      (s) => s.id === product.supplierId
                     );
                     return (
                       <TableRow key={product.id}>
@@ -116,9 +113,9 @@ export default function ProductsPage() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden lg:table-cell text-muted-foreground">
-                          {supplier?.name}
+                          {getUnitLabel(product.unit ?? "pc")}
                         </TableCell>
-                        <TableCell>${product.price.toFixed(2)}</TableCell>
+                        <TableCell>{formatPeso(product.price)}</TableCell>
                         <TableCell>{product.quantity}</TableCell>
                         <TableCell>
                           <StatusBadge status={product.status} />
