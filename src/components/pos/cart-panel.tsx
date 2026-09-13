@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Banknote, CreditCard, Minus, Plus, ShoppingCart, Smartphone, Trash2 } from "lucide-react";
 import type { CartItem, PaymentMethod } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,14 @@ import { cn } from "@/lib/utils";
 import { TAX_RATE } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
 
-const paymentMethods: { id: PaymentMethod; label: string; icon: string }[] = [
-  { id: "cash", label: "Cash", icon: "💵" },
-  { id: "card", label: "Card", icon: "💳" },
-  { id: "ewallet", label: "E-Wallet", icon: "📱" },
+const paymentMethods: {
+  id: PaymentMethod;
+  label: string;
+  Icon: typeof Banknote;
+}[] = [
+  { id: "cash", label: "Cash", Icon: Banknote },
+  { id: "card", label: "Card", Icon: CreditCard },
+  { id: "ewallet", label: "E-Wallet", Icon: Smartphone },
 ];
 
 interface CartPanelProps {
@@ -139,7 +143,7 @@ export function CartPanel({
                       : "border-border/50 hover:bg-muted"
                   )}
                 >
-                  <span className="text-lg">{pm.icon}</span>
+                  <pm.Icon className="h-5 w-5" />
                   {pm.label}
                 </button>
               ))}

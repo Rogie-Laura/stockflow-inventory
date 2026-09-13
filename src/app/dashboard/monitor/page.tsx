@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  DollarSign,
+  Coins,
   Package,
   Receipt,
   ShoppingBag,
@@ -94,7 +94,7 @@ export default function MonitorPage() {
             title="Today's Sales"
             value={formatPeso(metrics.todaySales)}
             change={metrics.salesChange}
-            icon={DollarSign}
+            icon={Coins}
             gradient="from-emerald-500 to-teal-600"
           />
           <StatCard

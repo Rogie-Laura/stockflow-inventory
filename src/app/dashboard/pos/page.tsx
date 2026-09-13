@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock, Monitor, Store } from "lucide-react";
+import { Lock, LockOpen, Monitor, Receipt } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/dashboard/header";
 import { ProductGrid } from "@/components/pos/product-grid";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ReceiptDialog } from "@/components/pos/receipt-dialog";
 import { PosActivateModal } from "@/components/pos/pos-activate-modal";
+import { ExitPosDialog } from "@/components/pos/exit-pos-dialog";
 import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 export default function POSPage() {
@@ -21,11 +21,12 @@ export default function POSPage() {
     selectedTerminal,
     posOperatorName,
     isPosSessionActive,
+    isPosLocked,
     role,
     terminals,
-    store,
     displayName,
     activatePosSession,
+    deactivatePosLock,
     refresh,
   } = useStore();
   const [search, setSearch] = useState("");
@@ -37,6 +38,7 @@ export default function POSPage() {
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [activateOpen, setActivateOpen] = useState(false);
+  const [exitPosOpen, setExitPosOpen] = useState(false);
 
   useEffect(() => {
     if (activateOpen) {
@@ -178,7 +180,7 @@ export default function POSPage() {
       <Header title="Point of Sale" subtitle={subtitle} />
 
       {!isPosSessionActive && (
-        <div className="mx-4 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:mx-6">
+        <div className="mx-3 mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 lg:mx-4">
           <div>
             <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
               POS hindi pa activated sa device na ito
@@ -197,43 +199,36 @@ export default function POSPage() {
         </div>
       )}
 
-      <main className="flex flex-1 flex-col overflow-hidden p-4 lg:flex-row lg:gap-4 lg:p-6">
-        <div className="mb-4 flex items-center justify-between lg:hidden">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Store className="h-4 w-4" />
-            {isPosSessionActive
-              ? `${selectedTerminal?.code} · ${posOperatorName}`
-              : "Hindi activated"}
-          </div>
-          <div className="flex gap-2">
-            {!isPosSessionActive && (
-              <Button size="sm" onClick={() => setActivateOpen(true)}>
-                Activate POS
-              </Button>
-            )}
-            {role !== "cashier" && (
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/dashboard/monitor">
-                  <Monitor className="mr-1 h-4 w-4" />
-                  Monitor
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="mb-3 hidden items-center gap-2 lg:flex">
-          {isPosSessionActive && (
-            <>
-              <Badge variant="outline" className="text-emerald-600">
-                {selectedTerminal?.code} · {posOperatorName}
-              </Badge>
-              <Badge className="bg-emerald-600 text-[10px]">POS Active</Badge>
-            </>
+      {isPosLocked && (
+        <div className="flex items-center justify-end gap-2 border-b border-border/50 px-3 py-2 lg:px-4">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/dashboard/transactions">
+              <Receipt className="mr-1 h-4 w-4" />
+              Transactions
+            </Link>
+          </Button>
+          {role !== "cashier" && (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/dashboard/monitor">
+                <Monitor className="mr-1 h-4 w-4" />
+                Monitor
+              </Link>
+            </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+            onClick={() => setExitPosOpen(true)}
+          >
+            <LockOpen className="mr-1 h-4 w-4" />
+            Exit POS
+          </Button>
         </div>
+      )}
 
-        <div className="flex-1 overflow-hidden lg:pr-0">
+      <main className="flex flex-1 flex-col overflow-hidden p-3 lg:flex-row lg:gap-3 lg:p-4">
+        <div className="flex-1 overflow-hidden">
           <ProductGrid
             products={products}
             categories={categories}
@@ -246,7 +241,7 @@ export default function POSPage() {
           />
         </div>
 
-        <div className="mt-4 h-[420px] shrink-0 lg:mt-0 lg:h-auto lg:w-[380px]">
+        <div className="mt-3 h-[420px] shrink-0 lg:mt-0 lg:h-auto lg:w-[360px]">
           <CartPanel
             cart={cart}
             paymentMethod={paymentMethod}
@@ -269,6 +264,12 @@ export default function POSPage() {
         terminals={terminals}
         defaultOperatorName={displayName}
         onActivate={activatePosSession}
+      />
+
+      <ExitPosDialog
+        open={exitPosOpen}
+        onOpenChange={setExitPosOpen}
+        onConfirm={deactivatePosLock}
       />
 
       <ReceiptDialog

@@ -1,13 +1,15 @@
 "use client";
 
 import type { Sale } from "@/types/inventory";
+import { formatPeso } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Banknote, CreditCard, Smartphone } from "lucide-react";
 
 const paymentIcons = {
-  cash: "💵",
-  card: "💳",
-  ewallet: "📱",
+  cash: Banknote,
+  card: CreditCard,
+  ewallet: Smartphone,
 };
 
 interface SalesFeedProps {
@@ -44,8 +46,11 @@ export function SalesFeed({ sales }: SalesFeedProps) {
                   key={sale.id}
                   className="flex items-center gap-3 rounded-xl border border-border/50 p-3 transition-colors hover:bg-muted/50"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-lg">
-                    {paymentIcons[sale.paymentMethod]}
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                    {(() => {
+                      const Icon = paymentIcons[sale.paymentMethod];
+                      return <Icon className="h-5 w-5 text-emerald-600" />;
+                    })()}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -61,7 +66,7 @@ export function SalesFeed({ sales }: SalesFeedProps) {
                     </p>
                   </div>
                   <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                    +${sale.total.toFixed(2)}
+                    +{formatPeso(sale.total)}
                   </p>
                 </div>
               );

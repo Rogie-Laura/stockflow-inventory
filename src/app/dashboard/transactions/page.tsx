@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  Banknote,
   CreditCard,
   Eye,
   Receipt,
   Search,
   Smartphone,
   Store,
-  Wallet,
 } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -45,9 +45,9 @@ import { Separator } from "@/components/ui/separator";
 
 const paymentConfig: Record<
   PaymentMethod,
-  { label: string; icon: typeof Wallet }
+  { label: string; icon: typeof Banknote }
 > = {
-  cash: { label: "Cash", icon: Wallet },
+  cash: { label: "Cash", icon: Banknote },
   card: { label: "Card", icon: CreditCard },
   ewallet: { label: "E-Wallet", icon: Smartphone },
 };
@@ -93,11 +93,11 @@ function TransactionDetail({ sale }: { sale: Sale }) {
               <div>
                 <p className="font-medium">{item.productName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {item.quantity} × ${item.unitPrice.toFixed(2)}
+                  {item.quantity} × {formatPeso(item.unitPrice)}
                 </p>
               </div>
             </div>
-            <span className="font-medium">${item.subtotal.toFixed(2)}</span>
+            <span className="font-medium">{formatPeso(item.subtotal)}</span>
           </div>
         ))}
       </div>
@@ -107,31 +107,31 @@ function TransactionDetail({ sale }: { sale: Sale }) {
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Subtotal</span>
-          <span>${sale.subtotal.toFixed(2)}</span>
+          <span>{formatPeso(sale.subtotal)}</span>
         </div>
         {sale.discount > 0 && (
           <div className="flex justify-between text-emerald-600">
             <span>Discount</span>
-            <span>-${sale.discount.toFixed(2)}</span>
+            <span>-{formatPeso(sale.discount)}</span>
           </div>
         )}
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tax</span>
-          <span>${sale.tax.toFixed(2)}</span>
+          <span>{formatPeso(sale.tax)}</span>
         </div>
         <div className="flex justify-between text-lg font-bold">
           <span>Total</span>
-          <span>${sale.total.toFixed(2)}</span>
+          <span>{formatPeso(sale.total)}</span>
         </div>
         {sale.paymentMethod === "cash" && (
           <>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Paid</span>
-              <span>${sale.amountPaid.toFixed(2)}</span>
+              <span>{formatPeso(sale.amountPaid)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Change</span>
-              <span>${sale.change.toFixed(2)}</span>
+              <span>{formatPeso(sale.change)}</span>
             </div>
           </>
         )}
@@ -191,13 +191,13 @@ export default function TransactionsPage() {
           />
           <StatCard
             title="Total Revenue"
-            value={`$${totalRevenue.toFixed(2)}`}
-            icon={Wallet}
+            value={formatPeso(totalRevenue)}
+            icon={Banknote}
             gradient="from-violet-500 to-violet-600"
           />
           <StatCard
             title="Today's Sales"
-            value={`$${todayRevenue.toFixed(2)}`}
+            value={formatPeso(todayRevenue)}
             icon={CreditCard}
             gradient="from-emerald-500 to-teal-600"
           />

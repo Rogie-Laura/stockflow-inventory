@@ -3,7 +3,7 @@
 import {
   AlertTriangle,
   Boxes,
-  DollarSign,
+  Coins,
   PackageX,
   TrendingUp,
 } from "lucide-react";
@@ -52,7 +52,7 @@ export default function DashboardPage() {
           <StatCard
             title="Sales Today"
             value={formatPeso(todaySalesTotal)}
-            icon={DollarSign}
+            icon={Coins}
             gradient="from-emerald-500 to-teal-600"
           />
           <StatCard

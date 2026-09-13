@@ -23,7 +23,7 @@ import {
 } from "@/lib/sales-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { DollarSign, Receipt, TrendingUp } from "lucide-react";
+import { Coins, Receipt, TrendingUp } from "lucide-react";
 
 export default function AnalyticsPage() {
   const { sales } = useInventory();
@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
             title="Sales Today"
             value={formatPeso(todayTotal)}
             change={salesChange}
-            icon={DollarSign}
+            icon={Coins}
             gradient="from-emerald-500 to-teal-600"
           />
           <StatCard
