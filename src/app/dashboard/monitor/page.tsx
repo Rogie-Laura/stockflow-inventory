@@ -20,21 +20,25 @@ import { TopProducts } from "@/components/monitor/top-products";
 import { TerminalSales } from "@/components/monitor/terminal-sales";
 import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
-import { hourlySalesData } from "@/lib/mock-data";
 import { formatPeso } from "@/lib/currency";
+import {
+  buildHourlySalesChart,
+  computeSalesChangePercent,
+} from "@/lib/sales-analytics";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 export default function MonitorPage() {
-  const { products, sales, activities } = useInventory();
+  const { products, sales, activities, refresh } = useInventory();
   const { terminals } = useStore();
-  const [, setTick] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => setTick((t) => t + 1), 30000);
+    const interval = setInterval(() => {
+      refresh();
+    }, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [refresh]);
 
   const today = new Date().toISOString().split("T")[0];
   const todaySales = useMemo(
@@ -53,9 +57,11 @@ export default function MonitorPage() {
       todayTransactions: todaySales.length,
       avgOrderValue: total / Math.max(todaySales.length, 1),
       itemsSoldToday: items,
-      salesChange: 18.4,
+      salesChange: computeSalesChangePercent(sales),
     };
-  }, [todaySales]);
+  }, [todaySales, sales]);
+
+  const hourlyData = useMemo(() => buildHourlySalesChart(sales), [sales]);
 
   const alertProducts = products.filter(
     (p) => p.status === "low_stock" || p.status === "out_of_stock"
@@ -113,7 +119,7 @@ export default function MonitorPage() {
 
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <HourlySalesChart data={hourlySalesData} />
+            <HourlySalesChart data={hourlyData} />
           </div>
           <InventoryHealth products={products} />
         </div>

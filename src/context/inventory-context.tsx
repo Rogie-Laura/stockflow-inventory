@@ -26,6 +26,7 @@ import {
 } from "@/lib/inventory-db";
 import { formatPeso } from "@/lib/currency";
 import { useStore } from "@/context/store-context";
+import { TABLES } from "@/lib/db-tables";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import type {
   Activity,
@@ -121,6 +122,31 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh, store?.id]);
 
+  useEffect(() => {
+    if (isDemoMode || !store?.id) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`inv-sale-${store.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: TABLES.sale,
+          filter: `store_id=eq.${store.id}`,
+        },
+        () => {
+          refresh();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [isDemoMode, store?.id, refresh]);
+
   const addActivity = useCallback((activity: Omit<Activity, "id">) => {
     setActivities((prev) => [
       { ...activity, id: `act-${Date.now()}` },
@@ -185,6 +211,22 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
         return sale;
       }
+
+      setSales((prev) => [sale, ...prev]);
+      for (const item of input.items) {
+        setProducts((prev) =>
+          prev.map((p) => {
+            if (p.id !== item.productId) return p;
+            const newQty = Math.max(0, p.quantity - item.quantity);
+            return { ...p, quantity: newQty, status: getStatus(newQty, p.minStock) };
+          })
+        );
+      }
+      addActivity({
+        type: "sale_completed",
+        message: `Sale ${sale.receiptNo} — ${formatPeso(total)} via ${input.paymentMethod}`,
+        timestamp: sale.createdAt,
+      });
 
       const supabase = createClient();
       const {

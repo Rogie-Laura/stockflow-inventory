@@ -1,6 +1,7 @@
 "use client";
 
 import type { Sale } from "@/types/inventory";
+import { formatPeso } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TopProductsProps {
@@ -64,7 +65,7 @@ export function TopProducts({ sales }: TopProductsProps) {
                   </p>
                 </div>
                 <span className="text-sm font-semibold">
-                  ${product.revenue.toFixed(2)}
+                  {formatPeso(product.revenue)}
                 </span>
               </div>
             ))}

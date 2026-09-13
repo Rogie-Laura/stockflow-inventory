@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -9,16 +10,30 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { chartData } from "@/lib/mock-data";
+import { useInventory } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
+import { buildDailyRevenueChart } from "@/lib/sales-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function RevenueChart() {
+interface RevenueChartProps {
+  title?: string;
+  days?: number;
+}
+
+export function RevenueChart({
+  title = "Sales (Last 7 Days)",
+  days = 7,
+}: RevenueChartProps) {
+  const { sales } = useInventory();
+  const chartData = useMemo(
+    () => buildDailyRevenueChart(sales, days),
+    [sales, days]
+  );
+
   return (
     <Card className="border-border/50">
       <CardHeader>
-        <CardTitle className="text-base font-semibold">
-          Revenue Overview
-        </CardTitle>
+        <CardTitle className="text-base font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
@@ -32,7 +47,7 @@ export function RevenueChart() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
               <XAxis
-                dataKey="month"
+                dataKey="label"
                 tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
@@ -41,7 +56,7 @@ export function RevenueChart() {
                 tick={{ fontSize: 12 }}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
               />
               <Tooltip
                 contentStyle={{
@@ -50,9 +65,11 @@ export function RevenueChart() {
                   borderRadius: "12px",
                   fontSize: "13px",
                 }}
-                formatter={(value) => [
-                  `$${Number(value).toLocaleString()}`,
-                  "Revenue",
+                formatter={(value, name) => [
+                  name === "revenue"
+                    ? formatPeso(Number(value))
+                    : Number(value).toLocaleString(),
+                  name === "revenue" ? "Sales" : "Transactions",
                 ]}
               />
               <Area

@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { formatPeso } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface HourlySalesChartProps {
@@ -35,7 +36,12 @@ export function HourlySalesChart({ data }: HourlySalesChartProps) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
               <XAxis dataKey="hour" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+              <YAxis
+                tick={{ fontSize: 11 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => `₱${v}`}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "hsl(var(--card))",
@@ -44,7 +50,7 @@ export function HourlySalesChart({ data }: HourlySalesChartProps) {
                   fontSize: "13px",
                 }}
                 formatter={(value, name) => [
-                  name === "sales" ? `$${Number(value).toLocaleString()}` : value,
+                  name === "sales" ? formatPeso(Number(value)) : value,
                   name === "sales" ? "Sales" : "Transactions",
                 ]}
               />

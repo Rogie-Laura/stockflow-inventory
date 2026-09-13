@@ -13,11 +13,13 @@ import { RevenueChart } from "@/components/dashboard/revenue-chart";
 import { CategoryChart } from "@/components/dashboard/category-chart";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { useInventory } from "@/context/inventory-context";
+import { formatPeso } from "@/lib/currency";
+import { getTodaySalesTotal } from "@/lib/sales-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 
 export default function DashboardPage() {
-  const { products, categories, suppliers } = useInventory();
+  const { products, categories, suppliers, sales } = useInventory();
 
   const totalValue = products.reduce(
     (sum, p) => sum + p.price * p.quantity,
@@ -29,6 +31,7 @@ export default function DashboardPage() {
   const lowStockProducts = products
     .filter((p) => p.status === "low_stock" || p.status === "out_of_stock")
     .slice(0, 5);
+  const todaySalesTotal = getTodaySalesTotal(sales);
 
   return (
     <>
@@ -47,10 +50,16 @@ export default function DashboardPage() {
             gradient="from-indigo-500 to-indigo-600"
           />
           <StatCard
-            title="Inventory Value"
-            value={`$${totalValue.toLocaleString()}`}
-            change={12.5}
+            title="Sales Today"
+            value={formatPeso(todaySalesTotal)}
             icon={DollarSign}
+            gradient="from-emerald-500 to-teal-600"
+          />
+          <StatCard
+            title="Inventory Value"
+            value={formatPeso(totalValue)}
+            change={12.5}
+            icon={TrendingUp}
             gradient="from-violet-500 to-violet-600"
           />
           <StatCard
