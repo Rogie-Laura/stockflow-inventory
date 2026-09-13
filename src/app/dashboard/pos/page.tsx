@@ -8,6 +8,7 @@ import { ProductGrid } from "@/components/pos/product-grid";
 import { CartPanel } from "@/components/pos/cart-panel";
 import { ReceiptDialog } from "@/components/pos/receipt-dialog";
 import { TerminalPicker } from "@/components/pos/terminal-picker";
+import { PosActivationDialog } from "@/components/pos/pos-activation-dialog";
 import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
@@ -17,7 +18,14 @@ import { toast } from "sonner";
 
 export default function POSPage() {
   const { products, categories, completeSale } = useInventory();
-  const { selectedTerminal, role, terminals } = useStore();
+  const {
+    selectedTerminal,
+    role,
+    terminals,
+    store,
+    isPosLocked,
+    activatePosLock,
+  } = useStore();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -27,12 +35,26 @@ export default function POSPage() {
   const [completedSale, setCompletedSale] = useState<Sale | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [terminalPickerOpen, setTerminalPickerOpen] = useState(false);
+  const [activationOpen, setActivationOpen] = useState(false);
+
+  const isAdmin = role === "store_admin" || role === "supervisor";
 
   useEffect(() => {
     if (!selectedTerminal && terminals.length > 0) {
       setTerminalPickerOpen(true);
     }
   }, [selectedTerminal, terminals.length]);
+
+  useEffect(() => {
+    if (
+      isAdmin &&
+      !isPosLocked &&
+      selectedTerminal &&
+      !terminalPickerOpen
+    ) {
+      setActivationOpen(true);
+    }
+  }, [isAdmin, isPosLocked, selectedTerminal, terminalPickerOpen]);
 
   function addToCart(product: Product) {
     if (product.quantity <= 0) {
@@ -243,7 +265,26 @@ export default function POSPage() {
 
       <TerminalPicker
         open={terminalPickerOpen}
-        onOpenChange={setTerminalPickerOpen}
+        onOpenChange={(open) => {
+          setTerminalPickerOpen(open);
+          if (!open && selectedTerminal && isAdmin && !isPosLocked) {
+            setActivationOpen(true);
+          }
+        }}
+      />
+
+      <PosActivationDialog
+        open={activationOpen}
+        terminal={selectedTerminal}
+        onConfirm={async (pin) => {
+          if (!store?.hasPosPin) {
+            toast.error("Mag-set muna ng POS PIN sa Settings.");
+            return false;
+          }
+          return activatePosLock(pin);
+        }}
+        onSkip={() => setActivationOpen(false)}
+        onClose={() => setActivationOpen(false)}
       />
 
       <ReceiptDialog

@@ -19,7 +19,7 @@ export async function fetchStoreContext(
 ): Promise<StoreContextData | null> {
   const { data: membership, error: memberError } = await supabase
     .from(TABLES.storeMember)
-    .select(`id, store_id, user_id, role, ${TABLES.store}(id, name, owner_id, created_at)`)
+    .select(`id, store_id, user_id, role, ${TABLES.store}(id, name, owner_id, created_at, pos_pin)`)
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
@@ -33,6 +33,7 @@ export async function fetchStoreContext(
     name: string;
     owner_id: string;
     created_at: string;
+    pos_pin: string | null;
   };
 
   if (!storeRow) return null;
@@ -42,6 +43,7 @@ export async function fetchStoreContext(
     name: storeRow.name,
     ownerId: storeRow.owner_id,
     createdAt: storeRow.created_at,
+    hasPosPin: Boolean(storeRow.pos_pin),
   };
 
   const [{ data: terminals }, { data: members }] = await Promise.all([

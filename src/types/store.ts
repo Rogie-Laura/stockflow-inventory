@@ -5,6 +5,7 @@ export interface Store {
   name: string;
   ownerId: string;
   createdAt: string;
+  hasPosPin: boolean;
 }
 
 export interface StoreMember {

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Lock } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,9 +9,31 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useStore } from "@/context/store-context";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const { canManageTeam, setPosPin, store, isDemoMode } = useStore();
+  const [posPin, setPosPinValue] = useState("");
+  const [posPinConfirm, setPosPinConfirm] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+
+  async function handleSavePosPin() {
+    if (posPin.length < 4 || posPin.length > 8) {
+      toast.error("POS PIN dapat 4-8 characters.");
+      return;
+    }
+    if (posPin !== posPinConfirm) {
+      toast.error("Hindi match ang PIN confirmation.");
+      return;
+    }
+    setSavingPin(true);
+    await setPosPin(posPin);
+    setSavingPin(false);
+    setPosPinValue("");
+    setPosPinConfirm("");
+  }
+
   return (
     <>
       <Header
@@ -19,6 +43,67 @@ export default function SettingsPage() {
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
+          {canManageTeam && (
+            <Card className="border-emerald-500/20 bg-emerald-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Lock className="h-4 w-4 text-emerald-600" />
+                  POS Activation PIN
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Ito ang password para i-activate ang POS mode sa bawat
+                  counter device. Cashiers ay hindi makaka-access ng ibang
+                  modules habang naka-lock ang device — kailangan nila (o ikaw)
+                  ang PIN na ito para mag-exit.
+                </p>
+                {isDemoMode && (
+                  <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                    Demo PIN: <strong>1234</strong>
+                  </p>
+                )}
+                {store?.hasPosPin && !isDemoMode && (
+                  <p className="text-xs text-muted-foreground">
+                    May naka-set nang POS PIN. Ilagay ang bago para palitan.
+                  </p>
+                )}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="posPin">Bagong POS PIN</Label>
+                    <Input
+                      id="posPin"
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={posPin}
+                      onChange={(e) => setPosPinValue(e.target.value)}
+                      placeholder="4-8 digit PIN"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="posPinConfirm">Confirm PIN</Label>
+                    <Input
+                      id="posPinConfirm"
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={posPinConfirm}
+                      onChange={(e) => setPosPinConfirm(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={handleSavePosPin}
+                  disabled={savingPin}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600"
+                >
+                  Save POS PIN
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           <Card className="border-border/50">
             <CardHeader>
               <CardTitle className="text-base font-semibold">

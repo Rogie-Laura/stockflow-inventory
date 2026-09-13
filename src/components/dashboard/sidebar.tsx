@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import {
   Activity,
   BarChart3,
   Boxes,
   LayoutDashboard,
+  LockOpen,
   Monitor,
   Receipt,
   CreditCard,
@@ -17,6 +19,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { ExitPosDialog } from "@/components/pos/exit-pos-dialog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/brand-logo";
@@ -44,10 +47,14 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { store, role, selectedTerminal } = useStore();
+  const { store, role, selectedTerminal, isPosLocked, deactivatePosLock } =
+    useStore();
+  const [exitPosOpen, setExitPosOpen] = useState(false);
+
+  const posOnlyMode = role === "cashier" || isPosLocked;
 
   const visibleItems = navItems.filter((item) => {
-    if (role === "cashier") return !item.adminOnly;
+    if (posOnlyMode) return !item.adminOnly;
     return true;
   });
 
@@ -96,6 +103,9 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                 <Badge variant="outline" className="text-[10px]">
                   {selectedTerminal.code}
                 </Badge>
+              )}
+              {isPosLocked && (
+                <Badge className="text-[10px] bg-emerald-600">POS Locked</Badge>
               )}
             </div>
           </div>
@@ -173,23 +183,40 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="border-t border-border/50 p-4">
-          <Link href="/dashboard/pos">
-            <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 transition-colors hover:from-emerald-500/15 hover:to-teal-500/15">
-              <p className="text-sm font-semibold">Mabilis na Benta</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Buksan ang POS para mag-process ng sale
-              </p>
-              <Button
-                size="sm"
-                className="mt-3 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-xs hover:from-emerald-600 hover:to-teal-700"
-              >
-                <ShoppingCart className="mr-1 h-3 w-3" />
-                Buksan ang POS
-              </Button>
-            </div>
-          </Link>
+          {isPosLocked ? (
+            <Button
+              variant="outline"
+              className="w-full gap-2 border-emerald-500/30 text-emerald-700 dark:text-emerald-400"
+              onClick={() => setExitPosOpen(true)}
+            >
+              <LockOpen className="h-4 w-4" />
+              Exit POS Mode (kailangan PIN)
+            </Button>
+          ) : (
+            <Link href="/dashboard/pos">
+              <div className="rounded-xl bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-4 transition-colors hover:from-emerald-500/15 hover:to-teal-500/15">
+                <p className="text-sm font-semibold">Mabilis na Benta</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Buksan ang POS para mag-process ng sale
+                </p>
+                <Button
+                  size="sm"
+                  className="mt-3 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-xs hover:from-emerald-600 hover:to-teal-700"
+                >
+                  <ShoppingCart className="mr-1 h-3 w-3" />
+                  Buksan ang POS
+                </Button>
+              </div>
+            </Link>
+          )}
         </div>
       </aside>
+
+      <ExitPosDialog
+        open={exitPosOpen}
+        onOpenChange={setExitPosOpen}
+        onConfirm={deactivatePosLock}
+      />
     </>
   );
 }
