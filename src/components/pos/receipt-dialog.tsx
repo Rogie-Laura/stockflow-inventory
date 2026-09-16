@@ -105,10 +105,12 @@ export function ReceiptDialog({ sale, open, onEndTransaction }: ReceiptDialogPro
                 <span>-{formatPeso(sale.discount)}</span>
               </div>
             )}
-            <div className="flex justify-between">
-              <span>Tax</span>
-              <span>{formatPeso(sale.tax)}</span>
-            </div>
+            {sale.tax > 0 && (
+              <div className="flex justify-between">
+                <span>Tax</span>
+                <span>{formatPeso(sale.tax)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold">
               <span>TOTAL</span>
               <span>{formatPeso(sale.total)}</span>

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 export default function SettingsPage() {
   const {
     canManageTeam,
+    canManageInventory,
     setPosPin,
     store,
     isDemoMode,
@@ -51,19 +52,36 @@ export default function SettingsPage() {
     setPosPinConfirm("");
   }
 
-  async function handleSaveStoreSettings() {
-    const vat = parseFloat(posVatPercent);
+  async function saveStoreSettings(
+    overrides: Partial<{
+      useMarginPricing: boolean;
+      posVatEnabled: boolean;
+      posVatPercent: number;
+    }> = {},
+  ) {
+    const vat = parseFloat(
+      overrides.posVatPercent !== undefined
+        ? String(overrides.posVatPercent)
+        : posVatPercent,
+    );
     if (Number.isNaN(vat) || vat < 0 || vat > 100) {
       toast.error("VAT percent dapat 0–100.");
-      return;
+      return false;
     }
     setSavingStoreSettings(true);
-    await updateStoreSettings({
-      useMarginPricing,
-      posVatEnabled,
+    const ok = await updateStoreSettings({
+      useMarginPricing:
+        overrides.useMarginPricing !== undefined
+          ? overrides.useMarginPricing
+          : useMarginPricing,
+      posVatEnabled:
+        overrides.posVatEnabled !== undefined
+          ? overrides.posVatEnabled
+          : posVatEnabled,
       posVatPercent: vat,
     });
     setSavingStoreSettings(false);
+    return ok;
   }
 
   return (
@@ -136,7 +154,7 @@ export default function SettingsPage() {
             </Card>
           )}
 
-          {canManageTeam && (
+          {canManageInventory && (
             <Card className="border-indigo-500/20 bg-indigo-500/5">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base font-semibold">
@@ -157,7 +175,11 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={useMarginPricing}
-                    onCheckedChange={setUseMarginPricing}
+                    disabled={savingStoreSettings}
+                    onCheckedChange={(checked) => {
+                      setUseMarginPricing(checked);
+                      void saveStoreSettings({ useMarginPricing: checked });
+                    }}
                   />
                 </div>
                 <Separator />
@@ -170,7 +192,11 @@ export default function SettingsPage() {
                   </div>
                   <Switch
                     checked={posVatEnabled}
-                    onCheckedChange={setPosVatEnabled}
+                    disabled={savingStoreSettings}
+                    onCheckedChange={(checked) => {
+                      setPosVatEnabled(checked);
+                      void saveStoreSettings({ posVatEnabled: checked });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -187,19 +213,17 @@ export default function SettingsPage() {
                     disabled={!posVatEnabled}
                     value={posVatPercent}
                     onChange={(e) => setPosVatPercent(e.target.value)}
+                    onBlur={() => void saveStoreSettings()}
                     className="max-w-[140px]"
                   />
                   <p className="text-xs text-muted-foreground">
                     Default 12%. Palitan kung magbago ang tax rate sa future.
                   </p>
                 </div>
-                <Button
-                  onClick={handleSaveStoreSettings}
-                  disabled={savingStoreSettings}
-                  className="bg-gradient-to-r from-indigo-500 to-violet-600"
-                >
-                  Save pricing & VAT
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Auto-save kapag nag-toggle. I-blur ang VAT field pagkatapos
+                  mag-type para ma-save ang bagong percent.
+                </p>
               </CardContent>
             </Card>
           )}

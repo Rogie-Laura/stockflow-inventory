@@ -25,7 +25,7 @@ function buildReceiptHtml(sale: Sale): string {
 <div class="total">
 <p>Subtotal: ${formatPeso(sale.subtotal)}</p>
 ${sale.discount > 0 ? `<p>Discount: -${formatPeso(sale.discount)}</p>` : ""}
-<p>Tax: ${formatPeso(sale.tax)}</p>
+${sale.tax > 0 ? `<p>Tax: ${formatPeso(sale.tax)}</p>` : ""}
 <p>TOTAL: ${formatPeso(sale.total)}</p>
 <p>Payment: ${escapeHtml(sale.paymentMethod)}</p>
 ${sale.paymentMethod === "cash" ? `<p>Paid: ${formatPeso(sale.amountPaid)} · Change: ${formatPeso(sale.change)}</p>` : ""}

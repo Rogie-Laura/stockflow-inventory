@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TABLES } from "@/lib/db-tables";
+import { mapStoreRow } from "@/lib/store-settings";
 import type { PosTerminal, Store, StoreMember, StoreRole } from "@/types/store";
 
 export interface StoreContextData {
@@ -19,9 +20,7 @@ export async function fetchStoreContext(
 ): Promise<StoreContextData | null> {
   const { data: membership, error: memberError } = await supabase
     .from(TABLES.storeMember)
-    .select(
-      `id, store_id, user_id, role, ${TABLES.store}(id, name, owner_id, created_at, pos_pin, use_margin_pricing, pos_vat_enabled, pos_vat_percent)`,
-    )
+    .select("id, store_id, user_id, role")
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
@@ -29,30 +28,18 @@ export async function fetchStoreContext(
   if (memberError) throw memberError;
   if (!membership) return null;
 
-  const storeRaw = membership[TABLES.store];
-  const storeRow = (Array.isArray(storeRaw) ? storeRaw[0] : storeRaw) as {
-    id: string;
-    name: string;
-    owner_id: string;
-    created_at: string;
-    pos_pin: string | null;
-    use_margin_pricing: boolean | null;
-    pos_vat_enabled: boolean | null;
-    pos_vat_percent: number | string | null;
-  };
+  const { data: storeRow, error: storeError } = await supabase
+    .from(TABLES.store)
+    .select(
+      "id, name, owner_id, created_at, pos_pin, use_margin_pricing, pos_vat_enabled, pos_vat_percent",
+    )
+    .eq("id", membership.store_id)
+    .single();
 
+  if (storeError) throw storeError;
   if (!storeRow) return null;
 
-  const store: Store = {
-    id: storeRow.id,
-    name: storeRow.name,
-    ownerId: storeRow.owner_id,
-    createdAt: storeRow.created_at,
-    hasPosPin: Boolean(storeRow.pos_pin),
-    useMarginPricing: storeRow.use_margin_pricing ?? true,
-    posVatEnabled: storeRow.pos_vat_enabled ?? true,
-    posVatPercent: Number(storeRow.pos_vat_percent ?? 12),
-  };
+  const store: Store = mapStoreRow(storeRow);
 
   const [{ data: terminals }, { data: members }] = await Promise.all([
     supabase

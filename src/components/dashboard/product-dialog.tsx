@@ -74,12 +74,11 @@ export function ProductDialog() {
       return;
     }
 
-    if (costValue <= 0) {
-      toast.error("Ilagay ang puhunan (cost) sa pesos");
-      return;
-    }
-
     if (useMarginPricing) {
+      if (costValue <= 0) {
+        toast.error("Ilagay ang puhunan (cost) sa pesos");
+        return;
+      }
       if (!marginValue || marginValue <= 0 || marginValue >= 100) {
         toast.error("Pumili ng valid na tubo %");
         return;
@@ -89,11 +88,8 @@ export function ProductDialog() {
       return;
     }
 
-    const marginForDb = useMarginPricing
-      ? marginValue
-      : costValue > 0 && sellingPrice > costValue
-        ? Math.round(((sellingPrice - costValue) / sellingPrice) * 10000) / 100
-        : 0;
+    const marginForDb = useMarginPricing ? marginValue : 0;
+    const costForDb = useMarginPricing ? costValue : costValue > 0 ? costValue : 0;
 
     try {
       await addProduct({
@@ -103,7 +99,7 @@ export function ProductDialog() {
         unit: form.unit,
         marginPercent: marginForDb,
         price: sellingPrice,
-        cost: costValue,
+        cost: costForDb,
         quantity: parseInt(form.quantity) || 0,
         minStock: parseInt(form.minStock) || 10,
         description: form.description,
@@ -210,7 +206,9 @@ export function ProductDialog() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="cost">Puhunan / Cost (₱) *</Label>
+              <Label htmlFor="cost">
+                Puhunan / Cost (₱){useMarginPricing ? " *" : " (optional)"}
+              </Label>
               <Input
                 id="cost"
                 type="number"
@@ -218,7 +216,7 @@ export function ProductDialog() {
                 min="0"
                 value={form.cost}
                 onChange={(e) => setForm({ ...form, cost: e.target.value })}
-                placeholder="100.00"
+                placeholder={useMarginPricing ? "100.00" : "0 kung wala"}
               />
             </div>
             {useMarginPricing ? (
@@ -265,17 +263,15 @@ export function ProductDialog() {
                 {formatPeso(sellingPrice)}
               </span>
             </div>
-            {costValue > 0 && sellingPrice > 0 && (
+            {useMarginPricing && costValue > 0 && marginValue > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
-                {useMarginPricing
-                  ? `Tubo: ${formatPeso(profitAmount)} (${marginValue}% ng presyo)`
-                  : `Tubo: ${formatPeso(profitAmount)}`}{" "}
-                · bawat {unitLabel.toLowerCase()}
+                Tubo: {formatPeso(profitAmount)} ({marginValue}% ng presyo) · bawat{" "}
+                {unitLabel.toLowerCase()}
               </p>
             )}
             {!useMarginPricing && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Manual presyo — pwede nang kasama ang tubo sa amount na inilagay mo.
+                Manual presyo lang — walang auto tubo % mula sa settings.
               </p>
             )}
           </div>
