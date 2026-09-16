@@ -1,0 +1,47 @@
+# PinoyStock Monitor (Flutter)
+
+Mobile **Monitoring Center** for PinoyStock — full analytics, Supabase live data, **Unity Ads** (same stack as `c:\scalper\mobile`).
+
+Web `/dashboard/monitor` stays summary-only; this app is the full dashboard + ads on open/resume.
+
+## Setup
+
+1. Install [Flutter](https://docs.flutter.dev/get-started/install) (3.8+).
+2. Copy env from the Next.js project (same Supabase project / PATROLLERS):
+
+   ```powershell
+   cd mobile
+   copy .env.example .env
+   ```
+
+   Edit `mobile/.env`:
+
+   - `SUPABASE_URL` — same as `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_ANON_KEY` — same as `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - Unity — new game in [Unity dashboard](https://dashboard.unity.com) or reuse test IDs from Scalper `mobile/.env`:
+     - `UNITY_ANDROID_GAME_ID` / `UNITY_IOS_GAME_ID`
+     - Create **Interstitial** placements (`Interstitial_Android`, `Interstitial_iOS`) or set `UNITY_INTERSTITIAL_PLACEMENT_ID`
+
+3. Run:
+
+   ```powershell
+   cd c:\Users\Project Developer\Documents\inventory_system\mobile
+   flutter pub get
+   flutter run
+   ```
+
+## Unity Ads
+
+- Package: `unity_ads_plugin` ^0.5.0 (see Scalper `rewarded_ad_service.dart`; here we use **interstitial** on app open/resume).
+- `UNITY_TEST_MODE=true` for test ads until production placements are live.
+- Cooldown: 45s between interstitials on resume (adjust in `lib/services/unity_ads_service.dart`).
+
+## Access
+
+- **store_admin** and **supervisor** only (same as web Monitor).
+- Cashier accounts see access denied.
+
+## Release
+
+- Android: signing + Play Store listing
+- iOS: Xcode + App Store (Unity iOS Game ID required)

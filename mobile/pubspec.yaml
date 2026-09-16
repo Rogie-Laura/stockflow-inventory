@@ -1,0 +1,28 @@
+name: pinoystock_monitor
+description: PinoyStock Monitoring Center — live sales and inventory on mobile.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.15.4
+  flutter_dotenv: ^6.0.1
+  provider: ^6.1.5+1
+  intl: ^0.20.2
+  unity_ads_plugin: ^0.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - .env
+    - .env.example

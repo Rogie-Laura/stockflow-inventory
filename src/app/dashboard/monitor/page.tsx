@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
+import Script from "next/script";
 import {
   Coins,
-  Package,
   Receipt,
   ShoppingBag,
   Store,
@@ -13,25 +13,26 @@ import {
 import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LiveIndicator } from "@/components/monitor/live-indicator";
-import { HourlySalesChart } from "@/components/monitor/hourly-sales-chart";
-import { SalesFeed } from "@/components/monitor/sales-feed";
-import { InventoryHealth } from "@/components/monitor/inventory-health";
-import { TopProducts } from "@/components/monitor/top-products";
-import { TerminalSales } from "@/components/monitor/terminal-sales";
+import { MonitorDownloadCta } from "@/components/monitor/monitor-download-cta";
+import { MonitorFullDashboard } from "@/components/monitor/monitor-full-dashboard";
 import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
+import { useMonitorAppMode } from "@/hooks/use-monitor-app-mode";
+import { useMonitorAdPulse } from "@/hooks/use-monitor-ad-pulse";
 import { formatPeso } from "@/lib/currency";
 import {
   buildHourlySalesChart,
   computeSalesChangePercent,
 } from "@/lib/sales-analytics";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/components/dashboard/status-badge";
+
+const adsenseClient = process.env.NEXT_PUBLIC_MONITOR_ADSENSE_CLIENT;
 
 export default function MonitorPage() {
   const { products, sales, activities, refresh } = useInventory();
   const { terminals } = useStore();
+  const { isMonitorApp, ready } = useMonitorAppMode();
+  const adPulse = useMonitorAdPulse(isMonitorApp);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -63,17 +64,27 @@ export default function MonitorPage() {
 
   const hourlyData = useMemo(() => buildHourlySalesChart(sales), [sales]);
 
-  const alertProducts = products.filter(
-    (p) => p.status === "low_stock" || p.status === "out_of_stock"
-  );
-
-  const recentActivities = activities.slice(0, 6);
+  const showFullDashboard = ready && isMonitorApp;
 
   return (
     <>
+      {isMonitorApp && adsenseClient ? (
+        <Script
+          id="monitor-adsense"
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+      ) : null}
+
       <Header
         title="Monitoring Dashboard"
-        subtitle="Real-time sales and inventory monitoring"
+        subtitle={
+          showFullDashboard
+            ? "Monitoring Center · full analytics"
+            : "Summary lang sa web — i-install sa phone para sa buong dashboard"
+        }
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -117,77 +128,18 @@ export default function MonitorPage() {
           />
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <HourlySalesChart data={hourlyData} />
-          </div>
-          <InventoryHealth products={products} />
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-3">
-          <TerminalSales sales={sales} terminals={terminals} />
-          <SalesFeed sales={sales} />
-          <TopProducts sales={sales} />
-
-          <Card className="border-border/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                <Package className="h-4 w-4 text-amber-500" />
-                Stock Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {alertProducts.length === 0 ? (
-                <p className="py-6 text-center text-sm text-emerald-600 dark:text-emerald-400">
-                  All products well stocked
-                </p>
-              ) : (
-                <div className="max-h-[280px] space-y-2 overflow-y-auto">
-                  {alertProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between rounded-lg border border-border/50 p-2.5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{product.image}</span>
-                        <div>
-                          <p className="text-sm font-medium">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {product.quantity} units left
-                          </p>
-                        </div>
-                      </div>
-                      <StatusBadge status={product.status} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="mt-6 border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">
-              Activity Stream
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="rounded-lg border border-border/50 px-3 py-2 text-sm"
-                >
-                  <p>{activity.message}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {showFullDashboard ? (
+          <MonitorFullDashboard
+            products={products}
+            sales={sales}
+            activities={activities}
+            terminals={terminals}
+            hourlyData={hourlyData}
+            adPulse={adPulse}
+          />
+        ) : (
+          <MonitorDownloadCta />
+        )}
       </main>
     </>
   );
