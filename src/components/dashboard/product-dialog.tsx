@@ -31,6 +31,7 @@ import {
   calcSellingPrice,
   getUnitLabel,
 } from "@/lib/product-units";
+import { ConfirmYesNoDialog } from "@/components/ui/confirm-yes-no-dialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +40,8 @@ export function ProductDialog() {
   const { store } = useStore();
   const useMarginPricing = store?.useMarginPricing ?? true;
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "",
     sku: "",
@@ -67,30 +70,40 @@ export function ProductDialog() {
     [costValue, sellingPrice]
   );
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function validateForm(): boolean {
     if (!form.name || !form.sku || !form.categoryId) {
       toast.error("Punan ang lahat ng required fields");
-      return;
+      return false;
     }
 
     if (useMarginPricing) {
       if (costValue <= 0) {
         toast.error("Ilagay ang puhunan (cost) sa pesos");
-        return;
+        return false;
       }
       if (!marginValue || marginValue <= 0 || marginValue >= 100) {
         toast.error("Pumili ng valid na tubo %");
-        return;
+        return false;
       }
     } else if (manualPrice <= 0) {
       toast.error("Ilagay ang presyo ng bentahan (kasama na ang tubo kung mayroon).");
-      return;
+      return false;
     }
 
+    return true;
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validateForm()) return;
+    setConfirmOpen(true);
+  }
+
+  async function confirmAddProduct() {
     const marginForDb = useMarginPricing ? marginValue : 0;
     const costForDb = useMarginPricing ? costValue : costValue > 0 ? costValue : 0;
 
+    setSaving(true);
     try {
       await addProduct({
         name: form.name,
@@ -107,6 +120,7 @@ export function ProductDialog() {
       });
 
       toast.success("Na-add na ang produkto!");
+      setConfirmOpen(false);
       setOpen(false);
       setForm({
         name: "",
@@ -123,12 +137,15 @@ export function ProductDialog() {
       });
     } catch {
       toast.error("Failed to add product");
+    } finally {
+      setSaving(false);
     }
   }
 
   const unitLabel = getUnitLabel(form.unit);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-gradient-to-r from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-violet-700">
@@ -332,5 +349,22 @@ export function ProductDialog() {
         </form>
       </DialogContent>
     </Dialog>
+
+      <ConfirmYesNoDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="I-save ang produktong ito?"
+        description={
+          <span>
+            <strong>{form.name || "—"}</strong> ({form.sku || "—"}) · presyo{" "}
+            {formatPeso(sellingPrice)} · qty {parseInt(form.quantity) || 0}
+          </span>
+        }
+        yesLabel="Yes"
+        noLabel="No"
+        loading={saving}
+        onYes={confirmAddProduct}
+      />
+    </>
   );
 }

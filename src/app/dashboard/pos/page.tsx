@@ -13,6 +13,8 @@ import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
+import { ConfirmYesNoDialog } from "@/components/ui/confirm-yes-no-dialog";
+import { formatPeso } from "@/lib/currency";
 import { calcPosTotals } from "@/lib/pos-tax";
 import { toast } from "sonner";
 
@@ -43,6 +45,9 @@ export default function POSPage() {
   const [exitPosOpen, setExitPosOpen] = useState(false);
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [addConfirmProduct, setAddConfirmProduct] = useState<Product | null>(
+    null
+  );
 
   useEffect(() => {
     if (activateOpen) {
@@ -81,7 +86,7 @@ export default function POSPage() {
     toast.info("Na-cancel ang transaksyon.");
   }
 
-  function addToCart(product: Product) {
+  function requestAddToCart(product: Product) {
     if (!transactionOpen) {
       toast.info("Pindutin muna ang Bagong Transaksyon.");
       return;
@@ -90,7 +95,10 @@ export default function POSPage() {
       toast.error("Product out of stock");
       return;
     }
+    setAddConfirmProduct(product);
+  }
 
+  function addToCart(product: Product) {
     setCart((prev) => {
       const existing = prev.find((i) => i.productId === product.id);
       if (existing) {
@@ -137,9 +145,8 @@ export default function POSPage() {
     );
 
     if (product) {
-      addToCart(product);
+      requestAddToCart(product);
       setSearch("");
-      toast.success(`Added: ${product.name}`);
     } else {
       toast.error(`No product found for SKU: ${trimmed}`);
     }
@@ -299,7 +306,7 @@ export default function POSPage() {
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
             transactionOpen={transactionOpen}
-            onAddToCart={addToCart}
+            onAddToCart={requestAddToCart}
             onRequestStartTransaction={() =>
               toast.info("Pindutin ang Bagong Transaksyon sa panel sa kanan.")
             }
@@ -347,6 +354,30 @@ export default function POSPage() {
         sale={completedSale}
         open={receiptOpen}
         onEndTransaction={endTransaction}
+      />
+
+      <ConfirmYesNoDialog
+        open={addConfirmProduct !== null}
+        onOpenChange={(open) => {
+          if (!open) setAddConfirmProduct(null);
+        }}
+        title="Idagdag sa order?"
+        description={
+          addConfirmProduct ? (
+            <span>
+              <strong>{addConfirmProduct.name}</strong> ·{" "}
+              {formatPeso(addConfirmProduct.price)} bawat item
+            </span>
+          ) : undefined
+        }
+        yesLabel="Yes"
+        noLabel="No"
+        onYes={() => {
+          if (!addConfirmProduct) return;
+          addToCart(addConfirmProduct);
+          toast.success(`Na-add: ${addConfirmProduct.name}`);
+          setAddConfirmProduct(null);
+        }}
       />
     </>
   );
