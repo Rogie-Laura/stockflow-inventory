@@ -25,8 +25,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { TAX_RATE } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
+import { calcPosTotals } from "@/lib/pos-tax";
+import type { Store } from "@/types/store";
 
 const paymentMethods: {
   id: PaymentMethod;
@@ -39,6 +40,7 @@ const paymentMethods: {
 ];
 
 interface CartPanelProps {
+  store: Store | null;
   transactionOpen: boolean;
   posSessionActive: boolean;
   cart: CartItem[];
@@ -127,6 +129,7 @@ function CartLineItems({
 }
 
 export function CartPanel({
+  store,
   transactionOpen,
   posSessionActive,
   cart,
@@ -156,8 +159,11 @@ export function CartPanel({
   const lineCount = cart.length;
   const unitCount = cart.reduce((sum, i) => sum + i.quantity, 0);
   const subtotal = cart.reduce((sum, i) => sum + i.subtotal, 0);
-  const tax = (subtotal - discount) * TAX_RATE;
-  const total = subtotal - discount + tax;
+  const { tax, total, vatEnabled, vatPercent } = calcPosTotals(
+    subtotal,
+    discount,
+    store,
+  );
   const paid = parseFloat(amountPaid);
   const change = Math.max(0, paid - total);
 
@@ -360,10 +366,14 @@ export function CartPanel({
                   <span>-{formatPeso(discount)}</span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Tax (12%)</span>
-                <span>{formatPeso(tax)}</span>
-              </div>
+              {vatEnabled && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    VAT ({vatPercent}%)
+                  </span>
+                  <span>{formatPeso(tax)}</span>
+                </div>
+              )}
               <Separator />
               <div className="flex justify-between text-lg font-bold">
                 <span>Total</span>

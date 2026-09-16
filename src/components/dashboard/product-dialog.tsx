@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useInventory } from "@/context/inventory-context";
+import { useStore } from "@/context/store-context";
 import { formatPeso } from "@/lib/currency";
 import {
   MARGIN_OPTIONS,
@@ -35,6 +36,8 @@ import { toast } from "sonner";
 
 export function ProductDialog() {
   const { categories, addProduct } = useInventory();
+  const { store } = useStore();
+  const useMarginPricing = store?.useMarginPricing ?? true;
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -43,6 +46,7 @@ export function ProductDialog() {
     unit: "pc",
     cost: "",
     marginPercent: "10",
+    sellingPrice: "",
     quantity: "",
     minStock: "",
     description: "",
@@ -51,11 +55,12 @@ export function ProductDialog() {
 
   const costValue = parseFloat(form.cost) || 0;
   const marginValue = parseFloat(form.marginPercent) || 0;
+  const manualPrice = parseFloat(form.sellingPrice) || 0;
 
-  const sellingPrice = useMemo(
-    () => calcSellingPrice(costValue, marginValue),
-    [costValue, marginValue]
-  );
+  const sellingPrice = useMemo(() => {
+    if (!useMarginPricing) return manualPrice;
+    return calcSellingPrice(costValue, marginValue);
+  }, [useMarginPricing, manualPrice, costValue, marginValue]);
 
   const profitAmount = useMemo(
     () => calcProfitAmount(costValue, sellingPrice),
@@ -74,10 +79,21 @@ export function ProductDialog() {
       return;
     }
 
-    if (!marginValue || marginValue <= 0 || marginValue >= 100) {
-      toast.error("Pumili ng valid na tubo %");
+    if (useMarginPricing) {
+      if (!marginValue || marginValue <= 0 || marginValue >= 100) {
+        toast.error("Pumili ng valid na tubo %");
+        return;
+      }
+    } else if (manualPrice <= 0) {
+      toast.error("Ilagay ang presyo ng bentahan (kasama na ang tubo kung mayroon).");
       return;
     }
+
+    const marginForDb = useMarginPricing
+      ? marginValue
+      : costValue > 0 && sellingPrice > costValue
+        ? Math.round(((sellingPrice - costValue) / sellingPrice) * 10000) / 100
+        : 0;
 
     try {
       await addProduct({
@@ -85,7 +101,7 @@ export function ProductDialog() {
         sku: form.sku,
         categoryId: form.categoryId,
         unit: form.unit,
-        marginPercent: marginValue,
+        marginPercent: marginForDb,
         price: sellingPrice,
         cost: costValue,
         quantity: parseInt(form.quantity) || 0,
@@ -103,6 +119,7 @@ export function ProductDialog() {
         unit: "pc",
         cost: "",
         marginPercent: "10",
+        sellingPrice: "",
         quantity: "",
         minStock: "",
         description: "",
@@ -204,24 +221,41 @@ export function ProductDialog() {
                 placeholder="100.00"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Tubo / Margin (%)</Label>
-              <Select
-                value={form.marginPercent}
-                onValueChange={(v) => setForm({ ...form, marginPercent: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Pumili ng tubo %" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MARGIN_OPTIONS.map((pct) => (
-                    <SelectItem key={pct} value={String(pct)}>
-                      {pct}% kikitain sa presyo
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {useMarginPricing ? (
+              <div className="space-y-2">
+                <Label>Tubo / Margin (%)</Label>
+                <Select
+                  value={form.marginPercent}
+                  onValueChange={(v) => setForm({ ...form, marginPercent: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pumili ng tubo %" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MARGIN_OPTIONS.map((pct) => (
+                      <SelectItem key={pct} value={String(pct)}>
+                        {pct}% kikitain sa presyo
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="sellingPrice">Presyo ng bentahan (₱) *</Label>
+                <Input
+                  id="sellingPrice"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.sellingPrice}
+                  onChange={(e) =>
+                    setForm({ ...form, sellingPrice: e.target.value })
+                  }
+                  placeholder="120.00"
+                />
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
@@ -231,10 +265,17 @@ export function ProductDialog() {
                 {formatPeso(sellingPrice)}
               </span>
             </div>
-            {costValue > 0 && marginValue > 0 && (
+            {costValue > 0 && sellingPrice > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
-                Tubo: {formatPeso(profitAmount)} ({marginValue}% ng presyo) ·
-                bawat {unitLabel.toLowerCase()}
+                {useMarginPricing
+                  ? `Tubo: ${formatPeso(profitAmount)} (${marginValue}% ng presyo)`
+                  : `Tubo: ${formatPeso(profitAmount)}`}{" "}
+                · bawat {unitLabel.toLowerCase()}
+              </p>
+            )}
+            {!useMarginPricing && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Manual presyo — pwede nang kasama ang tubo sa amount na inilagay mo.
               </p>
             )}
           </div>

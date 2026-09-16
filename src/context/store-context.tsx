@@ -61,6 +61,11 @@ interface StoreContextValue {
   ) => Promise<{ ok: boolean; error?: string }>;
   deactivatePosLock: (pin: string) => Promise<boolean>;
   setPosPin: (pin: string) => Promise<boolean>;
+  updateStoreSettings: (settings: {
+    useMarginPricing: boolean;
+    posVatEnabled: boolean;
+    posVatPercent: number;
+  }) => Promise<boolean>;
   refresh: () => Promise<void>;
 }
 
@@ -72,6 +77,9 @@ const DEMO_STORE: Store = {
   ownerId: "demo-owner",
   createdAt: new Date().toISOString(),
   hasPosPin: true,
+  useMarginPricing: true,
+  posVatEnabled: true,
+  posVatPercent: 12,
 };
 
 const DEMO_TERMINALS: PosTerminal[] = [
@@ -290,6 +298,58 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [verifyPosPin, store, selectedTerminal, isDemoMode]
   );
 
+  const updateStoreSettings = useCallback(
+    async (settings: {
+      useMarginPricing: boolean;
+      posVatEnabled: boolean;
+      posVatPercent: number;
+    }): Promise<boolean> => {
+      if (!store) return false;
+
+      if (isDemoMode) {
+        setStore((prev) =>
+          prev
+            ? {
+                ...prev,
+                useMarginPricing: settings.useMarginPricing,
+                posVatEnabled: settings.posVatEnabled,
+                posVatPercent: settings.posVatPercent,
+              }
+            : prev,
+        );
+        toast.success("Na-save ang store settings (demo).");
+        return true;
+      }
+
+      const supabase = createClient();
+      const { error } = await supabase.rpc("inv_update_store_settings", {
+        p_store_id: store.id,
+        p_use_margin_pricing: settings.useMarginPricing,
+        p_pos_vat_enabled: settings.posVatEnabled,
+        p_pos_vat_percent: settings.posVatPercent,
+      });
+
+      if (error) {
+        toast.error(error.message);
+        return false;
+      }
+
+      setStore((prev) =>
+        prev
+          ? {
+              ...prev,
+              useMarginPricing: settings.useMarginPricing,
+              posVatEnabled: settings.posVatEnabled,
+              posVatPercent: settings.posVatPercent,
+            }
+          : prev,
+      );
+      toast.success("Na-save ang store settings.");
+      return true;
+    },
+    [store, isDemoMode],
+  );
+
   const setPosPin = useCallback(
     async (pin: string): Promise<boolean> => {
       if (!store || isDemoMode) {
@@ -404,6 +464,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activatePosSession,
       deactivatePosLock,
       setPosPin,
+      updateStoreSettings,
       refresh,
     }),
     [
@@ -423,6 +484,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       activatePosSession,
       deactivatePosLock,
       setPosPin,
+      updateStoreSettings,
       refresh,
     ]
   );

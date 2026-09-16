@@ -6,6 +6,12 @@ export interface Store {
   ownerId: string;
   createdAt: string;
   hasPosPin: boolean;
+  /** When true, selling price is derived from cost + margin %. */
+  useMarginPricing: boolean;
+  /** Apply VAT on POS checkout. */
+  posVatEnabled: boolean;
+  /** VAT rate shown on receipts (e.g. 12). */
+  posVatPercent: number;
 }
 
 export interface StoreMember {

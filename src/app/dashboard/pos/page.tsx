@@ -13,6 +13,7 @@ import { useInventory } from "@/context/inventory-context";
 import { useStore } from "@/context/store-context";
 import type { CartItem, PaymentMethod, Product, Sale } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
+import { calcPosTotals } from "@/lib/pos-tax";
 import { toast } from "sonner";
 
 export default function POSPage() {
@@ -28,6 +29,7 @@ export default function POSPage() {
     activatePosSession,
     deactivatePosLock,
     refresh,
+    store,
   } = useStore();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -187,8 +189,7 @@ export default function POSPage() {
     }
 
     const subtotal = cart.reduce((s, i) => s + i.subtotal, 0);
-    const tax = (subtotal - discount) * 0.12;
-    const total = subtotal - discount + tax;
+    const { total } = calcPosTotals(subtotal, discount, store);
     const paid =
       paymentMethod === "cash" ? parseFloat(amountPaid) : total;
 
@@ -307,6 +308,7 @@ export default function POSPage() {
 
         <div className="mt-3 flex h-[min(70vh,640px)] shrink-0 flex-col lg:mt-0 lg:h-auto lg:min-h-[480px] lg:w-[360px]">
           <CartPanel
+            store={store}
             transactionOpen={transactionOpen}
             posSessionActive={isPosSessionActive}
             cart={cart}

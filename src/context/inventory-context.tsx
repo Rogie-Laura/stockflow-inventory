@@ -38,8 +38,10 @@ import type {
   Sale,
   Supplier,
 } from "@/types/inventory";
+import { calcPosTotals } from "@/lib/pos-tax";
 import { toast } from "sonner";
 
+/** @deprecated use calcPosTotals(store) */
 const TAX_RATE = 0.12;
 
 function getStatus(quantity: number, minStock: number): ProductStatus {
@@ -166,8 +168,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       }
 
       const subtotal = input.items.reduce((sum, i) => sum + i.subtotal, 0);
-      const tax = (subtotal - input.discount) * TAX_RATE;
-      const total = subtotal - input.discount + tax;
+      const { tax, total } = calcPosTotals(subtotal, input.discount, store);
       const change = Math.max(0, input.amountPaid - total);
 
       const sale: Sale = {

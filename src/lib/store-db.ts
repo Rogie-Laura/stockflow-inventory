@@ -19,7 +19,9 @@ export async function fetchStoreContext(
 ): Promise<StoreContextData | null> {
   const { data: membership, error: memberError } = await supabase
     .from(TABLES.storeMember)
-    .select(`id, store_id, user_id, role, ${TABLES.store}(id, name, owner_id, created_at, pos_pin)`)
+    .select(
+      `id, store_id, user_id, role, ${TABLES.store}(id, name, owner_id, created_at, pos_pin, use_margin_pricing, pos_vat_enabled, pos_vat_percent)`,
+    )
     .eq("user_id", userId)
     .limit(1)
     .maybeSingle();
@@ -34,6 +36,9 @@ export async function fetchStoreContext(
     owner_id: string;
     created_at: string;
     pos_pin: string | null;
+    use_margin_pricing: boolean | null;
+    pos_vat_enabled: boolean | null;
+    pos_vat_percent: number | string | null;
   };
 
   if (!storeRow) return null;
@@ -44,6 +49,9 @@ export async function fetchStoreContext(
     ownerId: storeRow.owner_id,
     createdAt: storeRow.created_at,
     hasPosPin: Boolean(storeRow.pos_pin),
+    useMarginPricing: storeRow.use_margin_pricing ?? true,
+    posVatEnabled: storeRow.pos_vat_enabled ?? true,
+    posVatPercent: Number(storeRow.pos_vat_percent ?? 12),
   };
 
   const [{ data: terminals }, { data: members }] = await Promise.all([

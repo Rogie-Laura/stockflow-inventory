@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Lock } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Lock, Percent, Receipt } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,10 +13,27 @@ import { useStore } from "@/context/store-context";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
-  const { canManageTeam, setPosPin, store, isDemoMode } = useStore();
+  const {
+    canManageTeam,
+    setPosPin,
+    store,
+    isDemoMode,
+    updateStoreSettings,
+  } = useStore();
   const [posPin, setPosPinValue] = useState("");
   const [posPinConfirm, setPosPinConfirm] = useState("");
   const [savingPin, setSavingPin] = useState(false);
+  const [useMarginPricing, setUseMarginPricing] = useState(true);
+  const [posVatEnabled, setPosVatEnabled] = useState(true);
+  const [posVatPercent, setPosVatPercent] = useState("12");
+  const [savingStoreSettings, setSavingStoreSettings] = useState(false);
+
+  useEffect(() => {
+    if (!store) return;
+    setUseMarginPricing(store.useMarginPricing);
+    setPosVatEnabled(store.posVatEnabled);
+    setPosVatPercent(String(store.posVatPercent));
+  }, [store]);
 
   async function handleSavePosPin() {
     if (posPin.length < 4 || posPin.length > 8) {
@@ -32,6 +49,21 @@ export default function SettingsPage() {
     setSavingPin(false);
     setPosPinValue("");
     setPosPinConfirm("");
+  }
+
+  async function handleSaveStoreSettings() {
+    const vat = parseFloat(posVatPercent);
+    if (Number.isNaN(vat) || vat < 0 || vat > 100) {
+      toast.error("VAT percent dapat 0–100.");
+      return;
+    }
+    setSavingStoreSettings(true);
+    await updateStoreSettings({
+      useMarginPricing,
+      posVatEnabled,
+      posVatPercent: vat,
+    });
+    setSavingStoreSettings(false);
   }
 
   return (
@@ -99,6 +131,74 @@ export default function SettingsPage() {
                   className="bg-gradient-to-r from-emerald-500 to-teal-600"
                 >
                   Save POS PIN
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {canManageTeam && (
+            <Card className="border-indigo-500/20 bg-indigo-500/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base font-semibold">
+                  <Receipt className="h-4 w-4 text-indigo-600" />
+                  Pricing & POS (VAT)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">
+                      Kalkulahin ang tubo mula sa %
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      ON: cost + margin % ang presyo. OFF: diretso kang mag-input
+                      ng presyo (pwede nang kasama ang tubo).
+                    </p>
+                  </div>
+                  <Switch
+                    checked={useMarginPricing}
+                    onCheckedChange={setUseMarginPricing}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Mag-apply ng VAT sa POS</p>
+                    <p className="text-xs text-muted-foreground">
+                      I-off kung VAT-inclusive na ang presyo o exempt ang tindahan.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={posVatEnabled}
+                    onCheckedChange={setPosVatEnabled}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vatPercent" className="flex items-center gap-1">
+                    <Percent className="h-3.5 w-3.5" />
+                    VAT percent sa POS
+                  </Label>
+                  <Input
+                    id="vatPercent"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    disabled={!posVatEnabled}
+                    value={posVatPercent}
+                    onChange={(e) => setPosVatPercent(e.target.value)}
+                    className="max-w-[140px]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Default 12%. Palitan kung magbago ang tax rate sa future.
+                  </p>
+                </div>
+                <Button
+                  onClick={handleSaveStoreSettings}
+                  disabled={savingStoreSettings}
+                  className="bg-gradient-to-r from-indigo-500 to-violet-600"
+                >
+                  Save pricing & VAT
                 </Button>
               </CardContent>
             </Card>
