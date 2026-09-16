@@ -69,10 +69,11 @@ export function MonitorPairQr() {
     <Card className="mt-6 border-emerald-500/25 bg-card/80">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">
-          Scan para mag-login sa phone
+          Login QR (sa app lang)
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          Buksan ang app → <strong>Scan QR</strong>. Bagong code every ~3 min.
+          <strong>Huwag</strong> i-scan ng phone camera — para sa{" "}
+          <strong>PinoyStock Monitor app</strong> → Scan QR. Bagong code ~3 min.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">

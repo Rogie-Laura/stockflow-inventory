@@ -12,6 +12,7 @@ import {
 import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LiveIndicator } from "@/components/monitor/live-indicator";
+import { MonitorInstallQr } from "@/components/monitor/monitor-install-qr";
 import { MonitorPairQr } from "@/components/monitor/monitor-pair-qr";
 import { useInventory } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
@@ -97,7 +98,10 @@ export default function MonitorPage() {
           />
         </div>
 
-        <MonitorPairQr />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MonitorInstallQr />
+          <MonitorPairQr />
+        </div>
       </main>
     </>
   );
