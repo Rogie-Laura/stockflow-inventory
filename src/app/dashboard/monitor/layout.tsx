@@ -3,12 +3,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Monitoring Center · PinoyStock",
   description:
-    "Live sales at inventory monitoring. I-install sa phone para sa full analytics.",
-  appleWebApp: {
-    capable: true,
-    title: "PinoyMonitor",
-    statusBarStyle: "default",
-  },
+    "Live sales summary sa web. Full analytics sa PinoyStock Monitor Flutter app.",
 };
 
 export default function MonitorLayout({

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo } from "react";
 import Link from "next/link";
-import Script from "next/script";
 import {
   Coins,
   Receipt,
@@ -14,25 +13,13 @@ import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LiveIndicator } from "@/components/monitor/live-indicator";
 import { MonitorDownloadCta } from "@/components/monitor/monitor-download-cta";
-import { MonitorFullDashboard } from "@/components/monitor/monitor-full-dashboard";
 import { useInventory } from "@/context/inventory-context";
-import { useStore } from "@/context/store-context";
-import { useMonitorAppMode } from "@/hooks/use-monitor-app-mode";
-import { useMonitorAdPulse } from "@/hooks/use-monitor-ad-pulse";
 import { formatPeso } from "@/lib/currency";
-import {
-  buildHourlySalesChart,
-  computeSalesChangePercent,
-} from "@/lib/sales-analytics";
+import { computeSalesChangePercent } from "@/lib/sales-analytics";
 import { Button } from "@/components/ui/button";
 
-const adsenseClient = process.env.NEXT_PUBLIC_MONITOR_ADSENSE_CLIENT;
-
 export default function MonitorPage() {
-  const { products, sales, activities, refresh } = useInventory();
-  const { terminals } = useStore();
-  const { isMonitorApp, ready } = useMonitorAppMode();
-  const adPulse = useMonitorAdPulse(isMonitorApp);
+  const { sales, refresh } = useInventory();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,29 +49,11 @@ export default function MonitorPage() {
     };
   }, [todaySales, sales]);
 
-  const hourlyData = useMemo(() => buildHourlySalesChart(sales), [sales]);
-
-  const showFullDashboard = ready && isMonitorApp;
-
   return (
     <>
-      {isMonitorApp && adsenseClient ? (
-        <Script
-          id="monitor-adsense"
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
-      ) : null}
-
       <Header
         title="Monitoring Dashboard"
-        subtitle={
-          showFullDashboard
-            ? "Monitoring Center · full analytics"
-            : "Summary lang sa web — i-install sa phone para sa buong dashboard"
-        }
+        subtitle="Summary sa web — i-install ang PinoyStock Monitor app sa phone para sa full analytics at Unity ads"
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -128,18 +97,7 @@ export default function MonitorPage() {
           />
         </div>
 
-        {showFullDashboard ? (
-          <MonitorFullDashboard
-            products={products}
-            sales={sales}
-            activities={activities}
-            terminals={terminals}
-            hourlyData={hourlyData}
-            adPulse={adPulse}
-          />
-        ) : (
-          <MonitorDownloadCta />
-        )}
+        <MonitorDownloadCta />
       </main>
     </>
   );

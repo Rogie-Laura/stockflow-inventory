@@ -2,7 +2,7 @@
 
 Mobile **Monitoring Center** for PinoyStock — full analytics, Supabase live data, **Unity Ads** (same stack as `c:\scalper\mobile`).
 
-Web `/dashboard/monitor` stays summary-only; this app is the full dashboard + ads on open/resume.
+**Walang PWA** sa web — ang `/dashboard/monitor` ay 4 KPIs + link dito lang. Ito ang official mobile install (Play Store / APK) na may **Unity Ads** on open/resume.
 
 ## Setup
 
