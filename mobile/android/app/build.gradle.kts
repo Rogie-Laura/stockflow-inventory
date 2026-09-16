@@ -37,6 +37,13 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    packaging {
+        jniLibs {
+            // Avoid "problem parsing package" on some sideload devices.
+            useLegacyPackaging = true
+        }
+    }
 }
 
 flutter {

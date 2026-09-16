@@ -10,8 +10,14 @@ export function getMonitorInstallDownloadPath() {
 
 const APK_FILENAME = "pinoystock-monitor.apk";
 
+/** Bump when replacing public/downloads APK (cache bust on phones). */
+export const MONITOR_APK_VERSION = "1.0.1";
+
 /** Verified release size (arm64 build) — for on-device checks. */
-export const MONITOR_APK_BYTES = 44_265_324;
+export const MONITOR_APK_BYTES = 22_039_867;
+
+/** Opens installed app from browser (launcher shortcut). */
+export const MONITOR_APP_OPEN_URL = "pinoystockmonitor://open";
 
 /** Link for the Download button on the install page. */
 export function getMonitorApkFileUrl(origin: string) {
@@ -21,8 +27,14 @@ export function getMonitorApkFileUrl(origin: string) {
 /** Direct static APK URL (one hop — avoids redirect chains on phone browsers). */
 export function getMonitorApkDirectUrl(origin: string) {
   const fromEnv = process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim();
-  if (fromEnv) return fromEnv;
-  return `${origin}/downloads/${APK_FILENAME}`;
+  const url = fromEnv
+    ? new URL(fromEnv)
+    : new URL(
+        `/downloads/${APK_FILENAME}`,
+        origin.replace(/\/+$/, "") + "/"
+      );
+  url.searchParams.set("v", MONITOR_APK_VERSION);
+  return url.toString();
 }
 
 /** QR → install page (manual tap — no auto download loop). */

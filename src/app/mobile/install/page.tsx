@@ -47,19 +47,16 @@ function InstallContent() {
         ) : (
           <ol className="mt-5 space-y-2 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
             <li>
-              <strong className="text-foreground">1.</strong> I-cancel muna ang
-              lumang download (⏸ + X) kung naka-hang sa 100%.
+              <strong className="text-foreground">1.</strong> I-delete ang lumang
+              pinoystock APK sa Downloads (lalo na kung parsing error).
             </li>
             <li>
-              <strong className="text-foreground">2.</strong> Pindutin ang{" "}
-              <strong>Download APK</strong> dito — hintayin ang &quot;Saved&quot;
-              / bagong file sa Downloads.
+              <strong className="text-foreground">2.</strong> I-tap ang download
+              button — hintayin ang notification, tapos i-tap ang APK → Install.
             </li>
             <li>
-              <strong className="text-foreground">3.</strong> Buksan ang{" "}
-              <strong>Files → Downloads</strong> → i-tap ang bagong{" "}
-              <code className="text-[11px]">pinoystock-monitor-….apk</code> →
-              Install.
+              <strong className="text-foreground">3.</strong> Pag na-install, pindutin{" "}
+              <strong>Buksan ang PinoyStock Monitor</strong> sa baba (launcher).
             </li>
           </ol>
         )}

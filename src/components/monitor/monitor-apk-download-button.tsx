@@ -1,143 +1,57 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   APK_FILENAME,
   MONITOR_APK_BYTES,
+  MONITOR_APP_OPEN_URL,
+  MONITOR_APK_VERSION,
 } from "@/lib/monitor-install";
 
 type Props = {
   apkUrl: string;
 };
 
-/** Manual blob save — one tap; avoids Chrome direct-link hang at 100%. */
+/**
+ * Direct CDN download (Chrome download manager). Blob save often causes
+ * "problem parsing package" / missing file on Android.
+ */
 export function MonitorApkDownloadButton({ apkUrl }: Props) {
-  const [progress, setProgress] = useState<number | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const busyRef = useRef(false);
-
-  const download = useCallback(async () => {
-    if (busyRef.current) return;
-    busyRef.current = true;
-    setBusy(true);
-    setError(null);
-    setProgress(0);
-    setSaved(false);
-
-    try {
-      const res = await fetch(apkUrl, { cache: "no-store" });
-      if (!res.ok) {
-        throw new Error(`Download failed (${res.status})`);
-      }
-
-      const total =
-        Number(res.headers.get("content-length")) || MONITOR_APK_BYTES;
-      const reader = res.body?.getReader();
-      if (!reader) {
-        const blob = await res.blob();
-        triggerSave(blob);
-        setProgress(100);
-        setSaved(true);
-        return;
-      }
-
-      const chunks: Uint8Array[] = [];
-      let loaded = 0;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) {
-          chunks.push(value);
-          loaded += value.length;
-          setProgress(Math.min(100, Math.round((loaded / total) * 100)));
-        }
-      }
-
-      const blob = new Blob(chunks as BlobPart[], {
-        type: "application/vnd.android.package-archive",
-      });
-
-      if (blob.size < MONITOR_APK_BYTES * 0.95) {
-        throw new Error(
-          `Incomplete file (${(blob.size / 1024 / 1024).toFixed(1)} MB). Try Wi‑Fi.`
-        );
-      }
-
-      triggerSave(blob);
-      setProgress(100);
-      setSaved(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Download failed");
-      setProgress(null);
-    } finally {
-      busyRef.current = false;
-      setBusy(false);
-    }
-  }, [apkUrl]);
+  const sizeMb = (MONITOR_APK_BYTES / 1024 / 1024).toFixed(1);
 
   return (
     <div className="w-full space-y-3">
-      <Button
-        type="button"
-        className="w-full"
-        size="lg"
-        disabled={busy}
-        onClick={() => void download()}
-      >
-        <Download className="mr-2 h-5 w-5" />
-        {busy
-          ? progress != null
-            ? `Downloading… ${progress}%`
-            : "Preparing…"
-          : saved
-            ? "Download ulit"
-            : "Download APK"}
+      <Button className="w-full" size="lg" asChild>
+        <a
+          href={apkUrl}
+          download={APK_FILENAME}
+          rel="noopener noreferrer"
+        >
+          <Download className="mr-2 h-5 w-5" />
+          I-download ang APK ({sizeMb} MB)
+        </a>
       </Button>
 
-      {progress != null && busy ? (
-        <div className="h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-indigo-500 transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      ) : null}
-
-      {saved && !busy ? (
-        <p className="text-left text-xs text-emerald-600 dark:text-emerald-400">
-          Na-save na sa Downloads. Buksan ang <strong>Files</strong> → i-tap ang
-          APK → Install. Huwag i-refresh ang page.
-        </p>
-      ) : null}
-
-      {error ? (
-        <p className="text-left text-xs text-red-500">{error}</p>
-      ) : null}
-
-      <p className="text-left text-[10px] text-muted-foreground">
-        Isang beses lang pindutin ang Download. Kung may ⏸ sa Downloads, i-cancel
-        (X) bago mag-download ulit. File:{" "}
-        <code className="text-[10px]">{APK_FILENAME}</code>
+      <p className="text-left text-xs text-muted-foreground">
+        <strong className="text-foreground">v{MONITOR_APK_VERSION}</strong> — direktang
+        download mula sa server (hindi blob). Pagkatapos: buksan ang notification{" "}
+        <strong>Download complete</strong> o <strong>Files → Downloads</strong> →
+        i-tap <code className="text-[11px]">{APK_FILENAME}</code> → Install.
       </p>
+
+      <p className="text-left text-xs text-amber-800 dark:text-amber-200">
+        Kung <strong>“problem parsing the package”</strong>: i-delete lahat ng lumang
+        pinoystock APK sa Downloads, download ulit dito. Dapat{" "}
+        <strong>{sizeMb} MB</strong> ang file — kung maliit, incomplete pa.
+      </p>
+
+      <Button variant="outline" className="w-full" size="lg" asChild>
+        <a href={MONITOR_APP_OPEN_URL}>
+          <ExternalLink className="mr-2 h-5 w-5" />
+          Buksan ang PinoyStock Monitor (pag na-install na)
+        </a>
+      </Button>
     </div>
   );
-}
-
-function triggerSave(blob: Blob) {
-  const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const name = `pinoystock-monitor-${stamp}.apk`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
