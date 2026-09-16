@@ -20,8 +20,8 @@ export function MonitorInstallQr() {
           I-scan para i-install ang app
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          I-scan → bukas ang <strong>install page</strong> → Download APK. Kung naka-hang
-          sa 100% (⏸), i-cancel (X) at download ulit mula sa page na iyon.
+          I-scan → install page → <strong>isang beses</strong> pindutin ang Download APK.
+          Huwag i-refresh. Buksan sa Files → Install.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 sm:items-start">

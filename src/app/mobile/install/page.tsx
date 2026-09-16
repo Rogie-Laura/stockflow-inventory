@@ -11,7 +11,6 @@ import { getMonitorApkFileUrl } from "@/lib/monitor-install";
 function InstallContent() {
   const searchParams = useSearchParams();
   const apkMissing = searchParams.get("apk") === "missing";
-  const autoStart = searchParams.get("auto") === "1";
   const [origin, setOrigin] = useState("https://inventorysystem-lemon.vercel.app");
 
   useEffect(() => {
@@ -35,7 +34,7 @@ function InstallContent() {
 
         {!apkMissing ? (
           <div className="mt-6">
-            <MonitorApkDownloadButton apkUrl={apkUrl} autoStart={autoStart} />
+            <MonitorApkDownloadButton apkUrl={apkUrl} />
           </div>
         ) : null}
 

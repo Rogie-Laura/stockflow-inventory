@@ -25,11 +25,9 @@ export function getMonitorApkDirectUrl(origin: string) {
   return `${origin}/downloads/${APK_FILENAME}`;
 }
 
-/** QR → install page (blob download). Direct APK URL often hangs at 100% on Chrome Android. */
+/** QR → install page (manual tap — no auto download loop). */
 export function getMonitorInstallQrUrl(origin: string) {
-  const page = new URL(getMonitorInstallPagePath(), origin);
-  page.searchParams.set("auto", "1");
-  return page.toString();
+  return new URL(getMonitorInstallPagePath(), origin).toString();
 }
 
 export function getMonitorPairUrl(origin: string, code: string) {

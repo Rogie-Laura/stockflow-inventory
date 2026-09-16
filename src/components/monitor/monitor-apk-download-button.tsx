@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,21 +10,23 @@ import {
 
 type Props = {
   apkUrl: string;
-  autoStart?: boolean;
 };
 
-/** Avoid Chrome Android stuck at 100% (pause ring) on direct navigation downloads. */
-export function MonitorApkDownloadButton({ apkUrl, autoStart }: Props) {
+/** Manual blob save — one tap; avoids Chrome direct-link hang at 100%. */
+export function MonitorApkDownloadButton({ apkUrl }: Props) {
   const [progress, setProgress] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const started = useRef(false);
+  const [saved, setSaved] = useState(false);
+  const busyRef = useRef(false);
 
   const download = useCallback(async () => {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     setProgress(0);
+    setSaved(false);
 
     try {
       const res = await fetch(apkUrl, { cache: "no-store" });
@@ -39,6 +41,7 @@ export function MonitorApkDownloadButton({ apkUrl, autoStart }: Props) {
         const blob = await res.blob();
         triggerSave(blob);
         setProgress(100);
+        setSaved(true);
         return;
       }
 
@@ -67,21 +70,15 @@ export function MonitorApkDownloadButton({ apkUrl, autoStart }: Props) {
 
       triggerSave(blob);
       setProgress(100);
+      setSaved(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Download failed");
       setProgress(null);
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
-  }, [apkUrl, busy]);
-
-  useEffect(() => {
-    if (!autoStart || started.current) return;
-    const ua = navigator.userAgent || "";
-    if (!/android/i.test(ua)) return;
-    started.current = true;
-    void download();
-  }, [autoStart, download]);
+  }, [apkUrl]);
 
   return (
     <div className="w-full space-y-3">
@@ -97,7 +94,9 @@ export function MonitorApkDownloadButton({ apkUrl, autoStart }: Props) {
           ? progress != null
             ? `Downloading… ${progress}%`
             : "Preparing…"
-          : "Download APK (recommended)"}
+          : saved
+            ? "Download ulit"
+            : "Download APK"}
       </Button>
 
       {progress != null && busy ? (
@@ -109,14 +108,20 @@ export function MonitorApkDownloadButton({ apkUrl, autoStart }: Props) {
         </div>
       ) : null}
 
+      {saved && !busy ? (
+        <p className="text-left text-xs text-emerald-600 dark:text-emerald-400">
+          Na-save na sa Downloads. Buksan ang <strong>Files</strong> → i-tap ang
+          APK → Install. Huwag i-refresh ang page.
+        </p>
+      ) : null}
+
       {error ? (
         <p className="text-left text-xs text-red-500">{error}</p>
       ) : null}
 
       <p className="text-left text-[10px] text-muted-foreground">
-        Kung may <strong>pause icon ⏸</strong> sa Downloads: i-tap ang{" "}
-        <strong>X</strong> para i-cancel, tapos gamitin ang button sa itaas
-        (hindi direktang link). File:{" "}
+        Isang beses lang pindutin ang Download. Kung may ⏸ sa Downloads, i-cancel
+        (X) bago mag-download ulit. File:{" "}
         <code className="text-[10px]">{APK_FILENAME}</code>
       </p>
     </div>
