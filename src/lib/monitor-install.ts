@@ -4,19 +4,24 @@ export function getMonitorInstallPagePath() {
   return "/mobile/install";
 }
 
+export function getMonitorInstallDownloadPath() {
+  return "/mobile/install/download";
+}
+
 const APK_FILENAME = "pinoystock-monitor.apk";
 
-/** Direct HTTPS link to the .apk file (required for camera QR → install). */
+/** Link for the Download button on the install page. */
 export function getMonitorApkFileUrl(origin: string) {
   const fromEnv = process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim();
   if (fromEnv) return fromEnv;
-  return `${origin}/downloads/${APK_FILENAME}`;
+  return `${origin}${getMonitorInstallDownloadPath()}`;
 }
 
+/** QR encodes this URL — always a valid app route (no bare /downloads 404). */
 export function getMonitorInstallQrUrl(origin: string) {
   const fromEnv = process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim();
   if (fromEnv) return fromEnv;
-  return getMonitorApkFileUrl(origin);
+  return `${origin}${getMonitorInstallDownloadPath()}`;
 }
 
 export function getMonitorPairUrl(origin: string, code: string) {
@@ -31,3 +36,5 @@ export function getMonitorPairDeepLink(code: string, apiOrigin: string) {
   });
   return `pinoystockmonitor://pair?${params.toString()}`;
 }
+
+export { APK_FILENAME };

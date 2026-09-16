@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Download, Smartphone } from "lucide-react";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { getMonitorApkFileUrl } from "@/lib/monitor-install";
 
-export default function MobileInstallPage() {
+function InstallContent() {
+  const searchParams = useSearchParams();
+  const apkMissing = searchParams.get("apk") === "missing";
   const [origin, setOrigin] = useState("https://inventorysystem-lemon.vercel.app");
 
   useEffect(() => {
@@ -21,9 +25,9 @@ export default function MobileInstallPage() {
   useEffect(() => {
     const ua = navigator.userAgent || "";
     if (!/android/i.test(ua)) return;
-    if (!hasEnvApk) return;
+    if (apkMissing) return;
     window.location.href = apkUrl;
-  }, [apkUrl, hasEnvApk]);
+  }, [apkUrl, apkMissing]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
@@ -44,13 +48,24 @@ export default function MobileInstallPage() {
           </a>
         </Button>
 
-        {!hasEnvApk ? (
+        {apkMissing || !hasEnvApk ? (
           <p className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-xs text-amber-900 dark:text-amber-200">
-            Ilagay ang file sa{" "}
-            <code className="text-[11px]">public/downloads/pinoystock-monitor.apk</code>{" "}
-            sa deploy, o i-set ang{" "}
-            <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
-            Vercel (direct .apk link mula Supabase Storage, etc.).
+            {apkMissing ? (
+              <>
+                <strong>APK wala pa sa server</strong> — kaya lumabas ang 404 kanina.
+                I-upload ang <code className="text-[11px]">pinoystock-monitor.apk</code>{" "}
+                sa <code className="text-[11px]">public/downloads/</code> at i-deploy,
+                o i-set ang{" "}
+                <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
+                Vercel.
+              </>
+            ) : (
+              <>
+                O i-set ang{" "}
+                <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
+                Vercel para auto-download ang APK.
+              </>
+            )}
           </p>
         ) : null}
 
@@ -67,5 +82,19 @@ export default function MobileInstallPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function MobileInstallPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          Loading…
+        </div>
+      }
+    >
+      <InstallContent />
+    </Suspense>
   );
 }
