@@ -9,12 +9,14 @@ Install QR on the web Monitor points to:
 Or set **`NEXT_PUBLIC_MONITOR_APK_URL`** on Vercel to a public HTTPS `.apk` URL
 (Supabase Storage, etc.).
 
-Build:
+Build (Windows: use a path **without spaces** — Gradle breaks on `Project Developer`):
 
 ```powershell
-cd mobile
+robocopy mobile C:\temp\pinoystock_mobile /E /XD build .dart_tool .gradle
+cd C:\temp\pinoystock_mobile
+flutter pub get
 flutter build apk --release
-copy build\app\outputs\flutter-apk\app-release.apk ..\public\downloads\pinoystock-monitor.apk
+copy build\app\outputs\flutter-apk\app-release.apk "C:\...\inventory_system\public\downloads\pinoystock-monitor.apk"
 ```
 
 Then deploy to Vercel.
