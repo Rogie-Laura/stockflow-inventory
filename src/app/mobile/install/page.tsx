@@ -18,16 +18,6 @@ function InstallContent() {
   }, []);
 
   const apkUrl = useMemo(() => getMonitorApkFileUrl(origin), [origin]);
-  const hasEnvApk = Boolean(
-    process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim()
-  );
-
-  useEffect(() => {
-    const ua = navigator.userAgent || "";
-    if (!/android/i.test(ua)) return;
-    if (apkMissing) return;
-    window.location.href = apkUrl;
-  }, [apkUrl, apkMissing]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
@@ -37,41 +27,49 @@ function InstallContent() {
         </div>
         <h1 className="text-xl font-bold">PinoyStock Monitor</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sideload APK (walang Play Store). Pag na-install, gamitin ang Login QR
-          sa web Monitor sa loob ng app.
+          Sideload APK (walang Play Store). Pag na-install, login gamit ang{" "}
+          <strong>Account Number</strong> sa web (avatar sa taas).
         </p>
 
         <Button className="mt-6 w-full" size="lg" asChild>
-          <a href={apkUrl} download>
+          <a href={apkUrl} download="pinoystock-monitor.apk">
             <Download className="mr-2 h-5 w-5" />
             Download APK
           </a>
         </Button>
 
-        {apkMissing || !hasEnvApk ? (
+        {apkMissing ? (
           <p className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-xs text-amber-900 dark:text-amber-200">
-            {apkMissing ? (
-              <>
-                <strong>APK wala pa sa server</strong> — kaya lumabas ang 404 kanina.
-                I-upload ang <code className="text-[11px]">pinoystock-monitor.apk</code>{" "}
-                sa <code className="text-[11px]">public/downloads/</code> at i-deploy,
-                o i-set ang{" "}
-                <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
-                Vercel.
-              </>
-            ) : (
-              <>
-                O i-set ang{" "}
-                <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
-                Vercel para auto-download ang APK.
-              </>
-            )}
+            <strong>APK wala pa sa server.</strong> I-upload ang{" "}
+            <code className="text-[11px]">pinoystock-monitor.apk</code> sa{" "}
+            <code className="text-[11px]">public/downloads/</code> at i-deploy.
           </p>
-        ) : null}
+        ) : (
+          <ol className="mt-5 space-y-2 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
+            <li>
+              <strong className="text-foreground">1.</strong> Hintayin ang 100%
+              — huwag isara ang browser agad.
+            </li>
+            <li>
+              <strong className="text-foreground">2.</strong> I-tap ang
+              notification na <strong>“Download complete”</strong> o buksan ang{" "}
+              <strong>Files / Downloads</strong> →{" "}
+              <code className="text-[11px]">pinoystock-monitor.apk</code>.
+            </li>
+            <li>
+              <strong className="text-foreground">3.</strong> Pindutin{" "}
+              <strong>Install</strong>. Kung blocked: payagan ang browser na
+              mag-install ng unknown apps.
+            </li>
+            <li>
+              <strong className="text-foreground">4.</strong> Hanapin sa app
+              drawer ang <strong>PinoyStock Monitor</strong> (launcher icon).
+            </li>
+          </ol>
+        )}
 
-        <p className="mt-6 text-xs text-muted-foreground">
-          Android: payagan ang install mula sa browser / unknown sources kung
-          hiningi.
+        <p className="mt-4 break-all text-[10px] text-muted-foreground">
+          {apkUrl}
         </p>
 
         <Link

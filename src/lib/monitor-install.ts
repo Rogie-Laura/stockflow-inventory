@@ -12,16 +12,19 @@ const APK_FILENAME = "pinoystock-monitor.apk";
 
 /** Link for the Download button on the install page. */
 export function getMonitorApkFileUrl(origin: string) {
-  const fromEnv = process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim();
-  if (fromEnv) return fromEnv;
-  return `${origin}${getMonitorInstallDownloadPath()}`;
+  return getMonitorApkDirectUrl(origin);
 }
 
-/** QR encodes this URL — always a valid app route (no bare /downloads 404). */
-export function getMonitorInstallQrUrl(origin: string) {
+/** Direct static APK URL (one hop — avoids redirect chains on phone browsers). */
+export function getMonitorApkDirectUrl(origin: string) {
   const fromEnv = process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim();
   if (fromEnv) return fromEnv;
-  return `${origin}${getMonitorInstallDownloadPath()}`;
+  return `${origin}/downloads/${APK_FILENAME}`;
+}
+
+/** QR encodes direct APK URL so download completes as a real .apk file. */
+export function getMonitorInstallQrUrl(origin: string) {
+  return getMonitorApkDirectUrl(origin);
 }
 
 export function getMonitorPairUrl(origin: string, code: string) {

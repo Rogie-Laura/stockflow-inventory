@@ -15,7 +15,7 @@ Build (Windows: use a path **without spaces** — Gradle breaks on `Project Deve
 robocopy mobile C:\temp\pinoystock_mobile /E /XD build .dart_tool .gradle
 cd C:\temp\pinoystock_mobile
 flutter pub get
-flutter build apk --release
+flutter build apk --release --target-platform android-arm64
 copy build\app\outputs\flutter-apk\app-release.apk "C:\...\inventory_system\public\downloads\pinoystock-monitor.apk"
 ```
 

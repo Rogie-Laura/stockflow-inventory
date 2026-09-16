@@ -20,9 +20,9 @@ export function MonitorInstallQr() {
           I-scan para i-install ang app
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          I-scan ng <strong>camera</strong> → direktang{" "}
-          <strong>download ng APK</strong>. Pagkatapos, buksan ang file at i-install;
-          login gamit ang account number sa avatar.
+          I-scan → <strong>download ng APK</strong>. Pag 100%, i-tap ang notification
+          o buksan sa <strong>Downloads</strong> → Install. Login: account number sa
+          avatar.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 sm:items-start">

@@ -15,14 +15,13 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const staticApk = new URL(`/downloads/${APK_FILENAME}`, url.origin);
 
-  // If APK was deployed under public/downloads/, serve via static redirect.
   try {
     const head = await fetch(staticApk, { method: "HEAD" });
     if (head.ok) {
       return NextResponse.redirect(staticApk, 302);
     }
   } catch {
-    // fall through to install instructions
+    // fall through
   }
 
   const install = new URL("/mobile/install", url.origin);
