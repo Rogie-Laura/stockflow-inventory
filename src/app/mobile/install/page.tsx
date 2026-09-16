@@ -3,14 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Download, Smartphone } from "lucide-react";
+import { Smartphone } from "lucide-react";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
+import { MonitorApkDownloadButton } from "@/components/monitor/monitor-apk-download-button";
 import { getMonitorApkFileUrl } from "@/lib/monitor-install";
 
 function InstallContent() {
   const searchParams = useSearchParams();
   const apkMissing = searchParams.get("apk") === "missing";
+  const autoStart = searchParams.get("auto") === "1";
   const [origin, setOrigin] = useState("https://inventorysystem-lemon.vercel.app");
 
   useEffect(() => {
@@ -31,12 +32,11 @@ function InstallContent() {
           <strong>Account Number</strong> sa web (avatar sa taas).
         </p>
 
-        <Button className="mt-6 w-full" size="lg" asChild>
-          <a href={apkUrl} download="pinoystock-monitor.apk">
-            <Download className="mr-2 h-5 w-5" />
-            Download APK
-          </a>
-        </Button>
+        {!apkMissing ? (
+          <div className="mt-6">
+            <MonitorApkDownloadButton apkUrl={apkUrl} autoStart={autoStart} />
+          </div>
+        ) : null}
 
         {apkMissing ? (
           <p className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-xs text-amber-900 dark:text-amber-200">
@@ -47,34 +47,26 @@ function InstallContent() {
         ) : (
           <ol className="mt-5 space-y-2 rounded-lg border border-border/60 bg-muted/30 px-4 py-3 text-left text-xs text-muted-foreground">
             <li>
-              <strong className="text-foreground">1.</strong> Hintayin ang 100%
-              — huwag isara ang browser agad.
+              <strong className="text-foreground">1.</strong> I-cancel muna ang
+              lumang download (⏸ + X) kung naka-hang sa 100%.
             </li>
             <li>
-              <strong className="text-foreground">2.</strong> I-tap ang
-              notification na <strong>“Download complete”</strong> o buksan ang{" "}
-              <strong>Files / Downloads</strong> →{" "}
-              <code className="text-[11px]">pinoystock-monitor.apk</code>.
+              <strong className="text-foreground">2.</strong> Pindutin ang{" "}
+              <strong>Download APK</strong> dito — hintayin ang &quot;Saved&quot;
+              / bagong file sa Downloads.
             </li>
             <li>
-              <strong className="text-foreground">3.</strong> Pindutin{" "}
-              <strong>Install</strong>. Kung blocked: payagan ang browser na
-              mag-install ng unknown apps.
-            </li>
-            <li>
-              <strong className="text-foreground">4.</strong> Hanapin sa app
-              drawer ang <strong>PinoyStock Monitor</strong> (launcher icon).
+              <strong className="text-foreground">3.</strong> Buksan ang{" "}
+              <strong>Files → Downloads</strong> → i-tap ang bagong{" "}
+              <code className="text-[11px]">pinoystock-monitor-….apk</code> →
+              Install.
             </li>
           </ol>
         )}
 
-        <p className="mt-4 break-all text-[10px] text-muted-foreground">
-          {apkUrl}
-        </p>
-
         <Link
           href="/auth/login"
-          className="mt-4 inline-block text-sm text-indigo-600 hover:underline dark:text-indigo-400"
+          className="mt-6 inline-block text-sm text-indigo-600 hover:underline dark:text-indigo-400"
         >
           Back to PinoyStock web
         </Link>

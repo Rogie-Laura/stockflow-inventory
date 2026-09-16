@@ -20,9 +20,8 @@ export function MonitorInstallQr() {
           I-scan para i-install ang app
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          I-scan → <strong>download ng APK</strong>. Pag 100%, i-tap ang notification
-          o buksan sa <strong>Downloads</strong> → Install. Login: account number sa
-          avatar.
+          I-scan → bukas ang <strong>install page</strong> → Download APK. Kung naka-hang
+          sa 100% (⏸), i-cancel (X) at download ulit mula sa page na iyon.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 sm:items-start">
