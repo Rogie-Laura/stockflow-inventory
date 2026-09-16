@@ -1,6 +1,8 @@
 "use client";
 
 import { Download, Smartphone, Store } from "lucide-react";
+import QRCode from "react-qr-code";
+import { MonitorPairQr } from "@/components/monitor/monitor-pair-qr";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -28,21 +30,31 @@ export function MonitorDownloadCta() {
       </CardHeader>
       <CardContent className="space-y-4">
         {installUrl ? (
-          <Button className="w-full sm:w-auto" asChild>
-            <a href={installUrl} target="_blank" rel="noopener noreferrer">
-              {playStoreUrl ? (
-                <>
-                  <Store className="mr-2 h-4 w-4" />
-                  Download sa Play Store
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Android APK
-                </>
-              )}
-            </a>
-          </Button>
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+            <div className="rounded-xl bg-white p-3">
+              <QRCode value={installUrl} size={140} />
+            </div>
+            <div className="space-y-2 text-center sm:text-left">
+              <p className="text-sm text-muted-foreground">
+                I-scan sa phone para i-install ang app (Play Store / APK).
+              </p>
+              <Button className="w-full sm:w-auto" asChild>
+                <a href={installUrl} target="_blank" rel="noopener noreferrer">
+                  {playStoreUrl ? (
+                    <>
+                      <Store className="mr-2 h-4 w-4" />
+                      Download sa Play Store
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download Android APK
+                    </>
+                  )}
+                </a>
+              </Button>
+            </div>
+          </div>
         ) : (
           <p className="rounded-lg border border-dashed border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
             Play Store / APK link — set{" "}
@@ -82,6 +94,8 @@ export function MonitorDownloadCta() {
             </span>
           </li>
         </ol>
+
+        <MonitorPairQr />
       </CardContent>
     </Card>
   );

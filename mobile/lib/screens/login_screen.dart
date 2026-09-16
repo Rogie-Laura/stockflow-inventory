@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import 'scan_qr_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -97,6 +98,31 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Sign in'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: loading
+                      ? null
+                      : () async {
+                          final ok = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                              builder: (_) => const ScanQrScreen(),
+                            ),
+                          );
+                          if (ok == true && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Naka-login na via QR!'),
+                              ),
+                            );
+                          }
+                        },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan QR (web Monitor)'),
                 ),
               ),
               const Spacer(flex: 3),

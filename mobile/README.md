@@ -30,6 +30,16 @@ Mobile **Monitoring Center** for PinoyStock — full analytics, Supabase live da
    flutter run
    ```
 
+## QR login (same account as web)
+
+1. Sa web, **Dashboard → Monitor** habang naka-login (admin/supervisor).
+2. I-scan ang **login QR** sa Flutter app → **Scan QR (web Monitor)**.
+3. One-time code (~3 min); auto-login same account.
+
+**Vercel:** idagdag `SUPABASE_SERVICE_ROLE_KEY` (Settings → API → service role) para gumana ang `/api/mobile/pair/exchange`. Huwag i-expose sa client.
+
+**Install QR:** kapag may `NEXT_PUBLIC_MONITOR_PLAY_STORE_URL` o `NEXT_PUBLIC_MONITOR_APK_URL` sa Vercel, may hiwalay na QR sa web para download.
+
 ## Unity Ads
 
 - Package: `unity_ads_plugin` ^0.5.0 (see Scalper `rewarded_ad_service.dart`; here we use **interstitial** on app open/resume).
