@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, Menu, Search } from "lucide-react";
+import { Bell, Copy, LogOut, Menu, Search } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useDashboardUI } from "@/context/dashboard-ui-context";
+import { useStore } from "@/context/store-context";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ interface HeaderProps {
 
 export function Header({ title, subtitle }: HeaderProps) {
   const { openSidebar } = useDashboardUI();
+  const { accountNumber } = useStore();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
@@ -114,11 +116,31 @@ export function Header({ title, subtitle }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
+            <DropdownMenuLabel className="space-y-1">
               <div>{displayName}</div>
               <div className="text-xs font-normal text-muted-foreground">
                 {user?.email ?? "demo@pinoystock.ph"}
               </div>
+              {accountNumber ? (
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/50 px-2 py-1.5 text-left text-xs font-normal"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await navigator.clipboard.writeText(accountNumber);
+                    toast.success("Na-copy ang account number (Monitor app login)");
+                  }}
+                >
+                  <span>
+                    Account #{" "}
+                    <span className="font-mono font-semibold tracking-wide">
+                      {accountNumber}
+                    </span>
+                  </span>
+                  <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                </button>
+              ) : null}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>

@@ -21,7 +21,8 @@ export function MonitorInstallQr() {
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
           I-scan ng <strong>camera</strong> → direktang{" "}
-          <strong>download ng APK</strong> (hindi JSON, hindi homepage).
+          <strong>download ng APK</strong>. Pagkatapos, buksan ang file at i-install;
+          login gamit ang account number sa avatar.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 sm:items-start">

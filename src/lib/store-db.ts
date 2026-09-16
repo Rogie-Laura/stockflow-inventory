@@ -10,6 +10,7 @@ export interface StoreContextData {
   terminals: PosTerminal[];
   members: StoreMember[];
   displayName: string;
+  accountNumber: string | null;
 }
 
 export async function fetchStoreContext(
@@ -40,6 +41,12 @@ export async function fetchStoreContext(
   if (!storeRow) return null;
 
   const store: Store = mapStoreRow(storeRow);
+
+  const { data: profileRow } = await supabase
+    .from(TABLES.profile)
+    .select("account_number")
+    .eq("id", userId)
+    .maybeSingle();
 
   const [{ data: terminals }, { data: members }] = await Promise.all([
     supabase
@@ -79,5 +86,6 @@ export async function fetchStoreContext(
     })),
     members: memberList,
     displayName: userMetaName || userEmail?.split("@")[0] || "Cashier",
+    accountNumber: (profileRow?.account_number as string | null) ?? null,
   };
 }

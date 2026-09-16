@@ -46,6 +46,7 @@ interface StoreContextValue {
   terminals: PosTerminal[];
   members: StoreMember[];
   displayName: string;
+  accountNumber: string | null;
   posOperatorName: string | null;
   isPosSessionActive: boolean;
   selectedTerminal: PosTerminal | null;
@@ -123,6 +124,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
   const [members, setMembers] = useState<StoreMember[]>([]);
   const [displayName, setDisplayName] = useState("Demo Admin");
+  const [accountNumber, setAccountNumber] = useState<string | null>(
+    isDemoMode ? "48291736" : null
+  );
   const [posOperatorName, setPosOperatorName] = useState<string | null>(null);
   const [selectedTerminal, setSelectedTerminalState] = useState<PosTerminal | null>(null);
   const [loading, setLoading] = useState(!isDemoMode);
@@ -413,6 +417,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTerminals(ctx.terminals);
       setMembers(ctx.members);
       setDisplayName(ctx.displayName);
+      setAccountNumber(ctx.accountNumber);
       syncPosLock(ctx.store.id, ctx.terminals);
     } catch {
       toast.error("Failed to load store context");
@@ -451,6 +456,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       terminals,
       members,
       displayName,
+      accountNumber,
       posOperatorName,
       isPosSessionActive,
       selectedTerminal,
@@ -473,6 +479,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       terminals,
       members,
       displayName,
+      accountNumber,
       posOperatorName,
       isPosSessionActive,
       selectedTerminal,

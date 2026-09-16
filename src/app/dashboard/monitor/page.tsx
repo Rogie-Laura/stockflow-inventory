@@ -13,7 +13,7 @@ import { Header } from "@/components/dashboard/header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { LiveIndicator } from "@/components/monitor/live-indicator";
 import { MonitorInstallQr } from "@/components/monitor/monitor-install-qr";
-import { MonitorPairQr } from "@/components/monitor/monitor-pair-qr";
+import { MonitorAccountLogin } from "@/components/monitor/monitor-account-login";
 import { useInventory } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
 import { computeSalesChangePercent } from "@/lib/sales-analytics";
@@ -100,7 +100,7 @@ export default function MonitorPage() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <MonitorInstallQr />
-          <MonitorPairQr />
+          <MonitorAccountLogin />
         </div>
       </main>
     </>
