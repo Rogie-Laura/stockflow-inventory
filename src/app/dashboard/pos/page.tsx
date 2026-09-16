@@ -40,6 +40,7 @@ export default function POSPage() {
   const [activateOpen, setActivateOpen] = useState(false);
   const [exitPosOpen, setExitPosOpen] = useState(false);
   const [transactionOpen, setTransactionOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     if (activateOpen) {
@@ -189,13 +190,16 @@ export default function POSPage() {
     const tax = (subtotal - discount) * 0.12;
     const total = subtotal - discount + tax;
     const paid =
-      paymentMethod === "cash" ? parseFloat(amountPaid) || total : total;
+      paymentMethod === "cash" ? parseFloat(amountPaid) : total;
 
-    if (paymentMethod === "cash" && paid < total) {
-      toast.error("Insufficient payment amount");
-      return;
+    if (paymentMethod === "cash") {
+      if (amountPaid.trim() === "" || Number.isNaN(paid) || paid < total) {
+        toast.error("Kulang o walang laman ang binayaran.");
+        return;
+      }
     }
 
+    setCheckoutLoading(true);
     try {
       const sale = await completeSale({
         items: cart,
@@ -210,12 +214,19 @@ export default function POSPage() {
       setDiscount(0);
       setAmountPaid("");
       setTransactionOpen(false);
-      toast.success("Sale completed!");
+      toast.success("Na-save ang transaksyon.");
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete sale"
       );
+    } finally {
+      setCheckoutLoading(false);
     }
+  }
+
+  function endTransaction() {
+    setReceiptOpen(false);
+    setCompletedSale(null);
   }
 
   const subtitle = isPosSessionActive
@@ -292,7 +303,7 @@ export default function POSPage() {
           />
         </div>
 
-        <div className="mt-3 h-[420px] shrink-0 lg:mt-0 lg:h-auto lg:w-[360px]">
+        <div className="mt-3 flex h-[min(70vh,640px)] shrink-0 flex-col lg:mt-0 lg:h-auto lg:min-h-[480px] lg:w-[360px]">
           <CartPanel
             transactionOpen={transactionOpen}
             posSessionActive={isPosSessionActive}
@@ -300,6 +311,7 @@ export default function POSPage() {
             paymentMethod={paymentMethod}
             discount={discount}
             amountPaid={amountPaid}
+            checkoutLoading={checkoutLoading}
             onStartTransaction={startTransaction}
             onCancelTransaction={cancelTransaction}
             onPaymentMethodChange={setPaymentMethod}
@@ -330,10 +342,7 @@ export default function POSPage() {
       <ReceiptDialog
         sale={completedSale}
         open={receiptOpen}
-        onClose={() => {
-          setReceiptOpen(false);
-          setCompletedSale(null);
-        }}
+        onEndTransaction={endTransaction}
       />
     </>
   );

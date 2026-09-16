@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, Printer } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, Loader2, Printer, XCircle } from "lucide-react";
 import type { Sale } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,29 +13,59 @@ import {
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { formatPeso } from "@/lib/currency";
+import { printSaleReceipt } from "@/lib/pos-receipt-print";
+import { toast } from "sonner";
 
 interface ReceiptDialogProps {
   sale: Sale | null;
   open: boolean;
-  onClose: () => void;
+  onEndTransaction: () => void;
 }
 
-export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
+function paymentLabel(method: Sale["paymentMethod"]): string {
+  if (method === "ewallet") return "GCash";
+  return method.charAt(0).toUpperCase() + method.slice(1);
+}
+
+export function ReceiptDialog({ sale, open, onEndTransaction }: ReceiptDialogProps) {
+  const [printing, setPrinting] = useState(false);
+
   if (!sale) return null;
 
   const date = new Date(sale.createdAt);
 
+  async function handlePrint() {
+    setPrinting(true);
+    try {
+      const result = await printSaleReceipt(sale!);
+      if (result === "printed") {
+        toast.success("Na-send sa printer. Naka-save na ang transaksyon.");
+      } else {
+        toast.warning(
+          "Walang printer na nakita — naka-save na ang transaksyon sa system.",
+        );
+      }
+    } finally {
+      setPrinting(false);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onEndTransaction();
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
             <CheckCircle2 className="h-6 w-6 text-emerald-500" />
           </div>
-          <DialogTitle className="text-center">Sale Complete!</DialogTitle>
+          <DialogTitle className="text-center">View receipt</DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-xl border border-dashed border-border/50 bg-muted/30 p-4 font-mono text-sm">
+        <div className="max-h-[50vh] overflow-y-auto rounded-xl border border-dashed border-border/50 bg-muted/30 p-4 font-mono text-sm">
           <div className="text-center">
             <p className="font-bold">PinoyStock POS</p>
             <p className="text-xs text-muted-foreground">
@@ -50,11 +81,14 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
           <Separator className="my-3" />
 
           {sale.items.map((item) => (
-            <div key={item.productId} className="mb-2 flex justify-between text-xs">
-              <span>
-                {item.productName} x{item.quantity}
+            <div
+              key={`${item.productId}-${item.quantity}`}
+              className="mb-2 flex justify-between gap-2 text-xs"
+            >
+              <span className="min-w-0 flex-1">
+                {item.productName} × {item.quantity}
               </span>
-              <span>{formatPeso(item.subtotal)}</span>
+              <span className="shrink-0">{formatPeso(item.subtotal)}</span>
             </div>
           ))}
 
@@ -79,9 +113,9 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
               <span>TOTAL</span>
               <span>{formatPeso(sale.total)}</span>
             </div>
-            <div className="flex justify-between capitalize">
+            <div className="flex justify-between">
               <span>Payment</span>
-              <span>{sale.paymentMethod}</span>
+              <span>{paymentLabel(sale.paymentMethod)}</span>
             </div>
             {sale.paymentMethod === "cash" && (
               <>
@@ -103,15 +137,25 @@ export function ReceiptDialog({ sale, open, onClose }: ReceiptDialogProps) {
         </div>
 
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <Button variant="outline" className="w-full">
-            <Printer className="mr-2 h-4 w-4" />
-            Print Receipt
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handlePrint}
+            disabled={printing}
+          >
+            {printing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Printer className="mr-2 h-4 w-4" />
+            )}
+            Print receipt
           </Button>
           <Button
             className="w-full bg-gradient-to-r from-indigo-500 to-violet-600"
-            onClick={onClose}
+            onClick={onEndTransaction}
           >
-            New Sale
+            <XCircle className="mr-2 h-4 w-4" />
+            End transaction
           </Button>
         </DialogFooter>
       </DialogContent>
