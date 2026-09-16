@@ -17,14 +17,20 @@ class EnvConfig {
   static String get unityIosGameId =>
       dotenv.maybeGet('UNITY_IOS_GAME_ID')?.trim() ?? '';
 
-  static String get unityInterstitialPlacementId {
-    final override =
-        dotenv.maybeGet('UNITY_INTERSTITIAL_PLACEMENT_ID')?.trim();
-    if (override != null && override.isNotEmpty) return override;
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'Interstitial_iOS';
+  /// Same defaults as Scalper (`Rewarded_Android` / `Rewarded_iOS`) for test ads.
+  static String get unityAdPlacementId {
+    for (final key in [
+      'UNITY_AD_PLACEMENT_ID',
+      'UNITY_REWARDED_PLACEMENT_ID',
+      'UNITY_INTERSTITIAL_PLACEMENT_ID',
+    ]) {
+      final override = dotenv.maybeGet(key)?.trim();
+      if (override != null && override.isNotEmpty) return override;
     }
-    return 'Interstitial_Android';
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return 'Rewarded_iOS';
+    }
+    return 'Rewarded_Android';
   }
 
   static bool get unityTestMode {

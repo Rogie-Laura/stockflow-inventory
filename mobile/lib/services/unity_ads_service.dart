@@ -66,7 +66,7 @@ class UnityAdsService {
   Future<void> preloadInterstitial() async {
     if (!canUseUnityAds || !_initialized || _isLoading || _isAdLoaded) return;
 
-    final placementId = EnvConfig.unityInterstitialPlacementId;
+    final placementId = EnvConfig.unityAdPlacementId;
     if (placementId.isEmpty) return;
 
     _isLoading = true;
@@ -114,7 +114,7 @@ class UnityAdsService {
     }
     if (!_isAdLoaded) return;
 
-    final watched = await _showInterstitial(EnvConfig.unityInterstitialPlacementId);
+    final watched = await _showInterstitial(EnvConfig.unityAdPlacementId);
     if (watched) {
       _lastShownAt = DateTime.now();
     }

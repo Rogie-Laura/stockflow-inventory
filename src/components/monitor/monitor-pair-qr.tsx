@@ -66,15 +66,13 @@ export function MonitorPairQr() {
   const qrValue = payload ? JSON.stringify(payload) : "";
 
   return (
-    <Card className="mt-4 border-emerald-500/25 bg-card/80">
+    <Card className="mt-6 border-emerald-500/25 bg-card/80">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">
           Scan para mag-login sa phone
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          Dapat naka-login ka dito sa web. Buksan ang{" "}
-          <strong>PinoyStock Monitor</strong> app →{" "}
-          <strong>Scan QR</strong> → same account agad. Bagong code every ~3 min.
+          Buksan ang app → <strong>Scan QR</strong>. Bagong code every ~3 min.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
@@ -105,12 +103,6 @@ export function MonitorPairQr() {
               ) : null}
             </>
           ) : null}
-          <p className="text-muted-foreground">
-            <strong>Ads:</strong> Unity interstitial sa Flutter app pag naka-set ang{" "}
-            <code className="text-xs">UNITY_*_GAME_ID</code> sa{" "}
-            <code className="text-xs">mobile/.env</code> (tulad ng Scalper). Hindi
-            pa automatic hanggang may valid Unity placements.
-          </p>
           <Button
             type="button"
             variant="outline"
