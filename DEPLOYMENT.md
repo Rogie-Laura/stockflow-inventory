@@ -46,22 +46,30 @@ In [Supabase Auth Settings](https://supabase.com/dashboard/project/spwrebtvdolfq
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://spwrebtvdolfqeolmwbe.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Supabase Settings → API>
-SUPABASE_SERVICE_ROLE_KEY=<from Supabase Settings → API — server only!>
 
-# PayMongo GCash billing
+# PayMongo GCash billing (same merchant as Pinoy-Up / scalper — reuse sk_test from c:/scalper/supabase/.env.paymongo)
 PAYMONGO_SECRET_KEY=sk_test_xxx or sk_live_xxx
-PAYMONGO_WEBHOOK_SECRET=<from PayMongo Dashboard → Webhooks>
+PAYMONGO_WEBHOOK_SECRET=whsk_xxx   # signing secret for THIS app's webhook URL only
+PAYMONGO_FULFILL_SECRET=<from Supabase — see below>
 ```
+
+### `PAYMONGO_FULFILL_SECRET`
+After migration `20260916120000_inv_paymongo_fulfill_rpc.sql`, read once from SQL (Dashboard → SQL):
+
+```sql
+SELECT value FROM public.inv_system_secret WHERE key = 'paymongo_fulfill';
+```
+
+Ilagay ang result sa Vercel at sa local `.env.local`. Huwag i-commit.
 
 ## GCash Subscription Setup (PayMongo)
 
-1. Create account at [paymongo.com](https://paymongo.com)
-2. Get **Secret Key** (test mode muna para sa testing)
-3. Sa PayMongo Dashboard → **Webhooks**, add endpoint:
+1. **Reuse** PayMongo test/live secret key (scalper file: `c:/scalper/supabase/.env.paymongo`).
+2. **Webhook** (hiwalay sa scalper Supabase URL) — endpoint:
    - URL: `https://inventorysystem-lemon.vercel.app/api/webhooks/paymongo`
    - Event: `checkout_session.payment.paid`
-4. Ilagay ang keys sa Vercel Environment Variables
-5. Redeploy
+   - Already registered via API (test mode); re-create in Dashboard if you rotate keys.
+3. Set `PAYMONGO_*` env vars on Vercel → **Redeploy**
 
 ### Customer flow
 1. `/dashboard/billing` → pili ng plan

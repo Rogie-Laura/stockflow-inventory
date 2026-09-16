@@ -48,7 +48,7 @@ export async function createGcashCheckoutSession(params: CreateCheckoutParams) {
               quantity: 1,
             },
           ],
-          payment_method_types: ["gcash"],
+          payment_method_types: ["gcash", "qrph"],
           success_url: params.successUrl,
           cancel_url: params.cancelUrl,
           reference_number: params.referenceNumber,

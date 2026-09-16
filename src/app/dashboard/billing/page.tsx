@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Check, Loader2, Smartphone } from "lucide-react";
+import { Check, Loader2, QrCode, Smartphone } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,15 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     const planParam = searchParams.get("plan") as PlanId | null;
@@ -38,7 +47,7 @@ export default function BillingPage() {
     const status = searchParams.get("status");
     if (status === "success") {
       toast.success(
-        "Payment received! I-a-activate ang plan mo sa ilang sandali via webhook."
+        "Payment received! I-a-activate ang plan mo sa ilang sandali."
       );
     } else if (status === "cancelled") {
       toast.info("Na-cancel ang payment. Pwede mong subukan ulit anytime.");
@@ -87,6 +96,52 @@ export default function BillingPage() {
     loadSubscription();
   }, []);
 
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status !== "success") return;
+
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from(TABLES.subscription)
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setSubscription({
+          id: data.id,
+          userId: data.user_id,
+          planId: data.plan_id,
+          billingCycle: data.billing_cycle,
+          status: data.status,
+          amountPaid: Number(data.amount_paid),
+          paymongoSessionId: data.paymongo_session_id,
+          paymongoReference: data.paymongo_reference,
+          currentPeriodStart: data.current_period_start,
+          currentPeriodEnd: data.current_period_end,
+          createdAt: data.created_at,
+        });
+        toast.success("Active na ang subscription mo!");
+        clearInterval(interval);
+      } else if (attempts >= 15) {
+        clearInterval(interval);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [searchParams]);
+
   async function handleGcashCheckout() {
     setCheckoutLoading(true);
     try {
@@ -124,7 +179,7 @@ export default function BillingPage() {
     <>
       <Header
         title="Billing & Subscription"
-        subtitle="Magbayad via GCash — buwanan o taunan"
+        subtitle="GCash app o QR Ph — buwanan o taunan"
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -260,7 +315,10 @@ export default function BillingPage() {
                     </span>
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {selected.name} plan — i-redirect ka sa GCash app
+                    {selected.name} plan —{" "}
+                    {isMobile
+                      ? "GCash app o QR Ph sa PayMongo checkout"
+                      : "PayMongo checkout (GCash / QR Ph)"}
                   </p>
                 </div>
 
@@ -286,17 +344,42 @@ export default function BillingPage() {
             </Card>
 
             <div className="rounded-xl border border-border/50 bg-muted/30 p-4 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Paano gumagana?</p>
-              <ol className="mt-2 list-inside list-decimal space-y-1">
-                <li>Pindutin ang &ldquo;Magbayad via GCash&rdquo;</li>
-                <li>I-redirect ka sa PayMongo checkout page</li>
-                <li>Piliin ang GCash at bayaran sa GCash app</li>
-                <li>Babalik ka dito at ma-a-activate ang plan mo</li>
-              </ol>
-              <p className="mt-3 text-xs">
-                Kailangan ng PayMongo account. Ilagay ang API keys sa Vercel
-                environment variables.
+              <p className="font-medium text-foreground">
+                {isMobile ? "Sa cellphone" : "Paano magbayad"}
               </p>
+              {isMobile ? (
+                <ul className="mt-2 space-y-3">
+                  <li className="flex gap-3">
+                    <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                    <span>
+                      <strong className="text-foreground">GCash (pinaka-mabilis):</strong>{" "}
+                      Tap &ldquo;Magbayad via GCash&rdquo; → sa PayMongo piliin{" "}
+                      <strong className="text-foreground">GCash</strong> → dapat
+                      diretso bubukas ang GCash app para kumpirmahin ang bayad.
+                    </span>
+                  </li>
+                  <li className="flex gap-3">
+                    <QrCode className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                    <span>
+                      <strong className="text-foreground">QR Ph:</strong> Sa PayMongo
+                      piliin <strong className="text-foreground">QR Ph</strong> → lalabas
+                      ang QR → buksan ang GCash → <strong className="text-foreground">Scan</strong>{" "}
+                      → i-scan ang code sa screen.
+                    </span>
+                  </li>
+                  <li className="text-xs">
+                    Pagkatapos bayad, babalik ka sa PinoyStock at auto-update ang plan
+                    (usually ilang segundo).
+                  </li>
+                </ul>
+              ) : (
+                <ol className="mt-2 list-inside list-decimal space-y-1">
+                  <li>Pindutin ang &ldquo;Magbayad via GCash&rdquo;</li>
+                  <li>Sa PayMongo: GCash, QR Ph, o ibang wallet</li>
+                  <li>QR Ph: i-scan ang QR gamit ang GCash app sa phone</li>
+                  <li>Babalik ka dito kapag successful ang bayad</li>
+                </ol>
+              )}
             </div>
           </div>
         )}

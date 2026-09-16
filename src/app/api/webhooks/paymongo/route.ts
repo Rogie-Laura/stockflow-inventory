@@ -1,67 +1,78 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { TABLES } from "@/lib/db-tables";
-import { getPeriodEnd, type BillingCycle, type PlanId } from "@/lib/plans";
+import { verifyPaymongoSignature } from "@/lib/paymongo-webhook";
 
-function getServiceClient() {
+function getAnonClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
   return createClient(url, key);
 }
 
 export async function POST(request: Request) {
+  const rawBody = await request.text();
   const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
 
   if (webhookSecret) {
-    const signature = request.headers.get("paymongo-signature");
+    const signature =
+      request.headers.get("paymongo-signature") ??
+      request.headers.get("Paymongo-Signature");
     if (!signature) {
       return NextResponse.json({ error: "Missing signature" }, { status: 401 });
     }
+    if (!verifyPaymongoSignature(rawBody, signature, webhookSecret)) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
-  const payload = await request.json();
-  const event = payload?.data;
-  const eventType = event?.type ?? event?.attributes?.type;
+  const fulfillSecret = process.env.PAYMONGO_FULFILL_SECRET;
+  if (!fulfillSecret) {
+    return NextResponse.json(
+      { error: "PAYMONGO_FULFILL_SECRET is not configured" },
+      { status: 503 },
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const root = payload as {
+    data?: {
+      type?: string;
+      attributes?: { type?: string; data?: { attributes?: Record<string, unknown> } };
+    };
+  };
+
+  const eventType =
+    root.data?.attributes?.type ?? root.data?.type;
 
   if (eventType !== "checkout_session.payment.paid") {
     return NextResponse.json({ received: true });
   }
 
-  const session = event?.data ?? event?.attributes?.data;
-  const attrs = session?.attributes ?? session;
-  const referenceNumber = attrs?.reference_number;
-  const metadata = attrs?.metadata ?? {};
-  const planId = metadata.plan_id as PlanId;
-  const billingCycle = metadata.billing_cycle as BillingCycle;
-  const userId = metadata.user_id as string;
+  const sessionAttrs =
+    root.data?.attributes?.data?.attributes ??
+    (root.data?.attributes?.data as { attributes?: Record<string, unknown> })
+      ?.attributes;
 
-  if (!referenceNumber || !userId || !planId || !billingCycle) {
-    return NextResponse.json({ error: "Invalid webhook data" }, { status: 400 });
+  const referenceNumber = sessionAttrs?.reference_number as string | undefined;
+  if (!referenceNumber) {
+    return NextResponse.json({ error: "Missing reference_number" }, { status: 400 });
   }
 
-  const supabase = getServiceClient();
-  const now = new Date();
-  const periodEnd = getPeriodEnd(billingCycle);
+  const supabase = getAnonClient();
+  const { data, error } = await supabase.rpc("inv_fulfill_paid_checkout", {
+    p_fulfill_secret: fulfillSecret,
+    p_reference_number: referenceNumber,
+  });
 
-  await supabase
-    .from(TABLES.subscription)
-    .update({
-      status: "cancelled",
-      updated_at: now.toISOString(),
-    })
-    .eq("user_id", userId)
-    .eq("status", "active");
+  if (error) {
+    console.error("inv_fulfill_paid_checkout", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  await supabase
-    .from(TABLES.subscription)
-    .update({
-      status: "active",
-      current_period_start: now.toISOString(),
-      current_period_end: periodEnd.toISOString(),
-      updated_at: now.toISOString(),
-    })
-    .eq("paymongo_reference", referenceNumber)
-    .eq("status", "pending");
-
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, result: data });
 }
