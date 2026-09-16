@@ -4,7 +4,8 @@ export type SubscriptionStatus =
   | "pending"
   | "active"
   | "expired"
-  | "cancelled";
+  | "cancelled"
+  | "trialing";
 
 export interface Subscription {
   id: string;

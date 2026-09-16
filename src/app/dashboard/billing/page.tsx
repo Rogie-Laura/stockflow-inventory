@@ -61,7 +61,7 @@ export default function BillingPage() {
         .from(TABLES.subscription)
         .select("*")
         .eq("user_id", user.id)
-        .eq("status", "active")
+        .in("status", ["active", "trialing"])
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -135,10 +135,26 @@ export default function BillingPage() {
         ) : (
           <div className="mx-auto max-w-4xl space-y-6">
             {subscription && (
-              <Card className="border-emerald-500/30 bg-emerald-500/5">
+              <Card
+                className={
+                  subscription.status === "trialing"
+                    ? "border-violet-500/30 bg-violet-500/5"
+                    : "border-emerald-500/30 bg-emerald-500/5"
+                }
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Badge className="bg-emerald-500">Active</Badge>
+                    <Badge
+                      className={
+                        subscription.status === "trialing"
+                          ? "bg-violet-500"
+                          : "bg-emerald-500"
+                      }
+                    >
+                      {subscription.status === "trialing"
+                        ? "Free Trial"
+                        : "Active"}
+                    </Badge>
                     {PLANS[subscription.planId].name} Plan
                   </CardTitle>
                 </CardHeader>
@@ -151,10 +167,12 @@ export default function BillingPage() {
                     )}
                   </span>
                   {" · "}
-                  {subscription.billingCycle === "monthly"
-                    ? "Buwanan"
-                    : "Taunan"}{" "}
-                  billing via GCash
+                  {subscription.status === "trialing"
+                    ? "3-day free trial (Standard features)"
+                    : subscription.billingCycle === "monthly"
+                      ? "Buwanan"
+                      : "Taunan"}{" "}
+                  {subscription.status !== "trialing" && "billing via GCash"}
                 </CardContent>
               </Card>
             )}

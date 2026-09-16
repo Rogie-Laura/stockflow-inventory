@@ -1,5 +1,7 @@
 export type PlanId = "standard" | "enterprise" | "enterprise_a_plus";
-export type BillingCycle = "monthly" | "annual";
+export type BillingCycle = "monthly" | "annual" | "trial";
+
+export const FREE_TRIAL_DAYS = 3;
 
 export interface PlanConfig {
   id: PlanId;

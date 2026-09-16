@@ -3,7 +3,9 @@
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DemoBanner } from "@/components/dashboard/demo-banner";
+import { TrialBanner, TrialExpiredBanner } from "@/components/dashboard/trial-banner";
 import { InventoryProvider } from "@/context/inventory-context";
+import { SubscriptionProvider } from "@/context/subscription-context";
 import { StoreProvider, useStore } from "@/context/store-context";
 import { DashboardUIProvider, useDashboardUI } from "@/context/dashboard-ui-context";
 
@@ -18,7 +20,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       {!hideSidebar && <Sidebar open={sidebarOpen} onClose={closeSidebar} />}
       <div className="flex flex-1 flex-col overflow-hidden">
         <DemoBanner />
-        {children}
+        <SubscriptionProvider>
+          <TrialBanner />
+          <TrialExpiredBanner />
+          {children}
+        </SubscriptionProvider>
       </div>
     </div>
   );

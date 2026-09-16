@@ -57,7 +57,7 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -72,7 +72,16 @@ export default function SignupPage() {
       return;
     }
 
-    toast.success("Account created! I-check ang email mo para i-confirm.");
+    if (data.session) {
+      toast.success(
+        "Welcome! 3 araw free trial — pwede ka nang mag-POS at inventory."
+      );
+      router.push("/dashboard");
+      router.refresh();
+      return;
+    }
+
+    toast.success("Account created! Pwede ka nang mag-login.");
     router.push("/auth/login");
   }
 
@@ -93,7 +102,7 @@ export default function SignupPage() {
           </Link>
           <CardTitle className="text-2xl">Gumawa ng account</CardTitle>
           <CardDescription>
-            Simulan ang negosyo mo — simula ₱100/buwan lang!
+            3 araw free trial — walang email confirm. Simula ₱100/buwan pagkatapos.
           </CardDescription>
         </CardHeader>
 
