@@ -1,6 +1,16 @@
 "use client";
 
-import { Banknote, CreditCard, Minus, Plus, ShoppingCart, Smartphone, Trash2 } from "lucide-react";
+import {
+  Banknote,
+  CreditCard,
+  Minus,
+  PlayCircle,
+  Plus,
+  ShoppingCart,
+  Smartphone,
+  Trash2,
+  XCircle,
+} from "lucide-react";
 import type { CartItem, PaymentMethod } from "@/types/inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +30,14 @@ const paymentMethods: {
 ];
 
 interface CartPanelProps {
+  transactionOpen: boolean;
+  posSessionActive: boolean;
   cart: CartItem[];
   paymentMethod: PaymentMethod;
   discount: number;
   amountPaid: string;
+  onStartTransaction: () => void;
+  onCancelTransaction: () => void;
   onPaymentMethodChange: (method: PaymentMethod) => void;
   onDiscountChange: (value: number) => void;
   onAmountPaidChange: (value: string) => void;
@@ -34,10 +48,14 @@ interface CartPanelProps {
 }
 
 export function CartPanel({
+  transactionOpen,
+  posSessionActive,
   cart,
   paymentMethod,
   discount,
   amountPaid,
+  onStartTransaction,
+  onCancelTransaction,
   onPaymentMethodChange,
   onDiscountChange,
   onAmountPaidChange,
@@ -58,22 +76,46 @@ export function CartPanel({
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-indigo-500" />
           <h2 className="font-semibold">Current Order</h2>
-          <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
-            {cart.length} items
-          </span>
+          {transactionOpen && (
+            <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
+              {cart.length} items
+            </span>
+          )}
         </div>
-        {cart.length > 0 && (
+        {transactionOpen && cart.length > 0 && (
           <Button variant="ghost" size="sm" onClick={onClear}>
             Clear
           </Button>
         )}
       </div>
 
+      {!transactionOpen ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+          <ShoppingCart className="h-14 w-14 text-muted-foreground/40" />
+          <div>
+            <p className="font-medium text-foreground">Walang bukas na transaksyon</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {posSessionActive
+                ? "Simulan muna bago mag-tap ng produkto."
+                : "I-activate ang POS bago mag-benta."}
+            </p>
+          </div>
+          <Button
+            size="lg"
+            className="h-12 w-full max-w-[260px] bg-gradient-to-r from-emerald-500 to-teal-600 text-base shadow-lg"
+            disabled={!posSessionActive}
+            onClick={onStartTransaction}
+          >
+            <PlayCircle className="mr-2 h-5 w-5" />
+            Bagong Transaksyon
+          </Button>
+        </div>
+      ) : (
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {cart.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
             <ShoppingCart className="mb-3 h-12 w-12 opacity-30" />
-            <p className="text-sm">Tap products to add to cart</p>
+            <p className="text-sm">Pindutin ang produkto para idagdag</p>
           </div>
         ) : (
           cart.map((item) => (
@@ -124,8 +166,23 @@ export function CartPanel({
           ))
         )}
       </div>
+      )}
 
-      {cart.length > 0 && (
+      {transactionOpen && (
+        <div className="border-t border-border/50 px-4 py-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full text-muted-foreground hover:text-red-600"
+            onClick={onCancelTransaction}
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            I-cancel ang transaksyon
+          </Button>
+        </div>
+      )}
+
+      {transactionOpen && cart.length > 0 && (
         <div className="border-t border-border/50 p-4 space-y-4">
           <div>
             <p className="mb-2 text-xs font-medium text-muted-foreground">

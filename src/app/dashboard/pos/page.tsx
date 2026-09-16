@@ -39,6 +39,7 @@ export default function POSPage() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [activateOpen, setActivateOpen] = useState(false);
   const [exitPosOpen, setExitPosOpen] = useState(false);
+  const [transactionOpen, setTransactionOpen] = useState(false);
 
   useEffect(() => {
     if (activateOpen) {
@@ -46,7 +47,42 @@ export default function POSPage() {
     }
   }, [activateOpen, refresh]);
 
+  useEffect(() => {
+    if (!isPosSessionActive) {
+      setTransactionOpen(false);
+      setCart([]);
+      setDiscount(0);
+      setAmountPaid("");
+    }
+  }, [isPosSessionActive]);
+
+  function startTransaction() {
+    if (!isPosSessionActive) {
+      setActivateOpen(true);
+      toast.error("I-activate muna ang POS.");
+      return;
+    }
+    setCart([]);
+    setDiscount(0);
+    setAmountPaid("");
+    setPaymentMethod("cash");
+    setTransactionOpen(true);
+    toast.success("Naka-open na ang transaksyon — puwede nang mag-add ng item.");
+  }
+
+  function cancelTransaction() {
+    setCart([]);
+    setDiscount(0);
+    setAmountPaid("");
+    setTransactionOpen(false);
+    toast.info("Na-cancel ang transaksyon.");
+  }
+
   function addToCart(product: Product) {
+    if (!transactionOpen) {
+      toast.info("Pindutin muna ang Bagong Transaksyon.");
+      return;
+    }
     if (product.quantity <= 0) {
       toast.error("Product out of stock");
       return;
@@ -87,6 +123,11 @@ export default function POSPage() {
   function handleScanSku(code: string) {
     const trimmed = code.trim();
     if (!trimmed) return;
+
+    if (!transactionOpen) {
+      toast.info("Pindutin muna ang Bagong Transaksyon bago mag-scan.");
+      return;
+    }
 
     const product = products.find(
       (p) => p.sku.toLowerCase() === trimmed.toLowerCase()
@@ -134,6 +175,11 @@ export default function POSPage() {
       return;
     }
 
+    if (!transactionOpen) {
+      toast.error("Walang bukas na transaksyon.");
+      return;
+    }
+
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
@@ -163,6 +209,7 @@ export default function POSPage() {
       setCart([]);
       setDiscount(0);
       setAmountPaid("");
+      setTransactionOpen(false);
       toast.success("Sale completed!");
     } catch (error) {
       toast.error(
@@ -237,16 +284,24 @@ export default function POSPage() {
             onScanSubmit={handleScanSku}
             selectedCategory={selectedCategory}
             onCategoryChange={setSelectedCategory}
+            transactionOpen={transactionOpen}
             onAddToCart={addToCart}
+            onRequestStartTransaction={() =>
+              toast.info("Pindutin ang Bagong Transaksyon sa panel sa kanan.")
+            }
           />
         </div>
 
         <div className="mt-3 h-[420px] shrink-0 lg:mt-0 lg:h-auto lg:w-[360px]">
           <CartPanel
+            transactionOpen={transactionOpen}
+            posSessionActive={isPosSessionActive}
             cart={cart}
             paymentMethod={paymentMethod}
             discount={discount}
             amountPaid={amountPaid}
+            onStartTransaction={startTransaction}
+            onCancelTransaction={cancelTransaction}
             onPaymentMethodChange={setPaymentMethod}
             onDiscountChange={setDiscount}
             onAmountPaidChange={setAmountPaid}

@@ -15,7 +15,9 @@ interface ProductGridProps {
   onScanSubmit?: (code: string) => void;
   selectedCategory: string;
   onCategoryChange: (id: string) => void;
+  transactionOpen: boolean;
   onAddToCart: (product: Product) => void;
+  onRequestStartTransaction?: () => void;
 }
 
 export function ProductGrid({
@@ -26,7 +28,9 @@ export function ProductGrid({
   onScanSubmit,
   selectedCategory,
   onCategoryChange,
+  transactionOpen,
   onAddToCart,
+  onRequestStartTransaction,
 }: ProductGridProps) {
   const filtered = products.filter((p) => {
     const matchesSearch =
@@ -36,6 +40,14 @@ export function ProductGrid({
       !selectedCategory || p.categoryId === selectedCategory;
     return matchesSearch && matchesCategory && p.quantity > 0;
   });
+
+  function handleProductClick(product: Product) {
+    if (!transactionOpen) {
+      onRequestStartTransaction?.();
+      return;
+    }
+    onAddToCart(product);
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -90,12 +102,19 @@ export function ProductGrid({
         </div>
       </div>
 
-      <div className="grid flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
+      <div className="relative min-h-0 flex-1">
+      <div className="grid h-full auto-rows-min grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4">
         {filtered.map((product) => (
           <button
             key={product.id}
-            onClick={() => onAddToCart(product)}
-            className="group flex flex-col rounded-xl border border-border/50 bg-card p-4 text-left transition-all hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5 active:scale-[0.98]"
+            onClick={() => handleProductClick(product)}
+            disabled={!transactionOpen}
+            className={cn(
+              "group flex flex-col rounded-xl border border-border/50 bg-card p-4 text-left transition-all",
+              transactionOpen
+                ? "hover:border-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/5 active:scale-[0.98]"
+                : "cursor-not-allowed opacity-60"
+            )}
           >
             <div className="mb-3 flex items-start justify-between">
               <span className="text-3xl">{product.image}</span>
@@ -119,6 +138,21 @@ export function ProductGrid({
             No products available
           </div>
         )}
+      </div>
+
+      {!transactionOpen && (
+        <div
+          className="absolute inset-0 z-10 flex items-end justify-center bg-background/50 p-6 pb-16 backdrop-blur-[2px] sm:items-center sm:pb-6"
+          aria-hidden
+        >
+          <div className="max-w-sm rounded-2xl border border-border/60 bg-card p-5 text-center shadow-xl">
+            <p className="font-semibold">Simulan ang transaksyon</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Pindutin ang <strong>Bagong Transaksyon</strong> sa kanan bago mag-add ng item.
+            </p>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
