@@ -169,21 +169,21 @@ export default function POSPage() {
     setCart((prev) => prev.filter((i) => i.productId !== productId));
   }
 
-  async function handleCheckout() {
+  async function handleCheckout(): Promise<boolean> {
     if (!isPosSessionActive) {
       setActivateOpen(true);
       toast.error("I-activate muna ang POS bago mag-checkout.");
-      return;
+      return false;
     }
 
     if (!transactionOpen) {
       toast.error("Walang bukas na transaksyon.");
-      return;
+      return false;
     }
 
     if (cart.length === 0) {
       toast.error("Cart is empty");
-      return;
+      return false;
     }
 
     const subtotal = cart.reduce((s, i) => s + i.subtotal, 0);
@@ -195,7 +195,7 @@ export default function POSPage() {
     if (paymentMethod === "cash") {
       if (amountPaid.trim() === "" || Number.isNaN(paid) || paid < total) {
         toast.error("Kulang o walang laman ang binayaran.");
-        return;
+        return false;
       }
     }
 
@@ -215,10 +215,12 @@ export default function POSPage() {
       setAmountPaid("");
       setTransactionOpen(false);
       toast.success("Na-save ang transaksyon.");
+      return true;
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to complete sale"
       );
+      return false;
     } finally {
       setCheckoutLoading(false);
     }

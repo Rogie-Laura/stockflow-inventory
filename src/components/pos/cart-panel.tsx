@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  ArrowLeft,
   Banknote,
   CreditCard,
   Loader2,
@@ -28,8 +27,6 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { TAX_RATE } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
-
-type CheckoutStep = "items" | "payment";
 
 const paymentMethods: {
   id: PaymentMethod;
@@ -57,19 +54,17 @@ interface CartPanelProps {
   onUpdateQty: (productId: string, delta: number) => void;
   onRemove: (productId: string) => void;
   onClear: () => void;
-  onCheckout: () => void;
+  onCheckout: () => Promise<boolean>;
 }
 
 function CartLineItems({
   cart,
-  editable,
   onUpdateQty,
   onRemove,
 }: {
   cart: CartItem[];
-  editable: boolean;
-  onUpdateQty?: (productId: string, delta: number) => void;
-  onRemove?: (productId: string) => void;
+  onUpdateQty: (productId: string, delta: number) => void;
+  onRemove: (productId: string) => void;
 }) {
   if (cart.length === 0) {
     return (
@@ -94,45 +89,37 @@ function CartLineItems({
               {formatPeso(item.unitPrice)} × {item.quantity}
             </p>
           </div>
-          {editable && onUpdateQty && onRemove ? (
-            <>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => onUpdateQty(item.productId, -1)}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <span className="w-6 text-center text-sm font-medium">
-                  {item.quantity}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => onUpdateQty(item.productId, 1)}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold">
-                  {formatPeso(item.subtotal)}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => onRemove(item.productId)}
-                  className="text-muted-foreground hover:text-red-500"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            </>
-          ) : (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onUpdateQty(item.productId, -1)}
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="w-6 text-center text-sm font-medium">
+              {item.quantity}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => onUpdateQty(item.productId, 1)}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+          <div className="text-right">
             <p className="text-sm font-semibold">{formatPeso(item.subtotal)}</p>
-          )}
+            <button
+              type="button"
+              onClick={() => onRemove(item.productId)}
+              className="text-muted-foreground hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </li>
       ))}
     </ul>
@@ -157,11 +144,13 @@ export function CartPanel({
   onClear,
   onCheckout,
 }: CartPanelProps) {
-  const [step, setStep] = useState<CheckoutStep>("items");
+  const [paymentOpen, setPaymentOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
 
   useEffect(() => {
-    if (!transactionOpen) setStep("items");
+    if (!transactionOpen) {
+      setPaymentOpen(false);
+    }
   }, [transactionOpen]);
 
   const lineCount = cart.length;
@@ -182,8 +171,13 @@ export function CartPanel({
 
   function confirmCancel() {
     setCancelConfirmOpen(false);
-    setStep("items");
+    setPaymentOpen(false);
     onCancelTransaction();
+  }
+
+  async function handleCompleteCheckout() {
+    const ok = await onCheckout();
+    if (ok) setPaymentOpen(false);
   }
 
   return (
@@ -192,9 +186,7 @@ export function CartPanel({
         <div className="flex shrink-0 items-center justify-between border-b border-border/50 p-4">
           <div className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5 text-indigo-500" />
-            <h2 className="font-semibold">
-              {step === "payment" ? "Payment" : "Current Order"}
-            </h2>
+            <h2 className="font-semibold">Current Order</h2>
             {transactionOpen && lineCount > 0 && (
               <span className="rounded-full bg-indigo-500/10 px-2 py-0.5 text-xs font-medium text-indigo-600 dark:text-indigo-400">
                 {lineCount} {lineCount === 1 ? "item" : "items"} · {unitCount}{" "}
@@ -202,7 +194,7 @@ export function CartPanel({
               </span>
             )}
           </div>
-          {transactionOpen && step === "items" && cart.length > 0 && (
+          {transactionOpen && cart.length > 0 && (
             <Button variant="ghost" size="sm" onClick={onClear}>
               Clear
             </Button>
@@ -237,13 +229,12 @@ export function CartPanel({
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <CartLineItems
                 cart={cart}
-                editable={step === "items"}
-                onUpdateQty={step === "items" ? onUpdateQty : undefined}
-                onRemove={step === "items" ? onRemove : undefined}
+                onUpdateQty={onUpdateQty}
+                onRemove={onRemove}
               />
             </div>
 
-            {cart.length > 0 && step === "items" && (
+            {cart.length > 0 && (
               <div className="shrink-0 space-y-3 border-t border-border/50 p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -251,7 +242,7 @@ export function CartPanel({
                 </div>
                 <Button
                   className="h-12 w-full bg-gradient-to-r from-indigo-500 to-violet-600 text-base"
-                  onClick={() => setStep("payment")}
+                  onClick={() => setPaymentOpen(true)}
                 >
                   Proceed to Payment
                 </Button>
@@ -264,133 +255,163 @@ export function CartPanel({
                 </Button>
               </div>
             )}
-
-            {cart.length > 0 && step === "payment" && (
-              <div className="shrink-0 space-y-4 border-t border-border/50 p-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="-mt-1 h-8 px-0 text-muted-foreground"
-                  onClick={() => setStep("items")}
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Back to items
-                </Button>
-
-                <div>
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">
-                    Payment method
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {paymentMethods.map((pm) => (
-                      <button
-                        key={pm.id}
-                        type="button"
-                        onClick={() => onPaymentMethodChange(pm.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-all",
-                          paymentMethod === pm.id
-                            ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
-                            : "border-border/50 hover:bg-muted",
-                        )}
-                      >
-                        <pm.Icon className="h-5 w-5" />
-                        {pm.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs text-muted-foreground">
-                      Discount (₱)
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={discount || ""}
-                      onChange={(e) =>
-                        onDiscountChange(parseFloat(e.target.value) || 0)
-                      }
-                      className="mt-1"
-                    />
-                  </div>
-                  {paymentMethod === "cash" && (
-                    <div>
-                      <label className="text-xs text-muted-foreground">
-                        Binayaran (₱)
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={amountPaid}
-                        onChange={(e) => onAmountPaidChange(e.target.value)}
-                        className="mt-1"
-                        placeholder={formatPeso(total)}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatPeso(subtotal)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Discount</span>
-                      <span>-{formatPeso(discount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax (12%)</span>
-                    <span>{formatPeso(tax)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">
-                      {formatPeso(total)}
-                    </span>
-                  </div>
-                  {paymentMethod === "cash" && paid >= total && (
-                    <div className="flex justify-between text-emerald-600">
-                      <span>Change</span>
-                      <span>{formatPeso(change)}</span>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  className="h-12 w-full bg-gradient-to-r from-indigo-500 to-violet-600 text-base shadow-lg shadow-indigo-500/25"
-                  onClick={onCheckout}
-                  disabled={cashAmountInvalid || checkoutLoading}
-                >
-                  {checkoutLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Sinesave...
-                    </>
-                  ) : (
-                    <>Complete Transaction — {formatPeso(total)}</>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 w-full border-red-500/30 text-red-600 hover:bg-red-500/10"
-                  onClick={requestCancelTransaction}
-                >
-                  Cancel Transaction
-                </Button>
-              </div>
-            )}
           </>
         )}
       </div>
+
+      <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <DialogContent className="flex max-h-[min(92vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+          <DialogHeader className="border-b border-border/50 px-6 py-4">
+            <DialogTitle>Payment</DialogTitle>
+            <DialogDescription>
+              {lineCount} item(s) · {unitCount} pcs — piliin ang paraan ng
+              bayad
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
+            <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Order summary
+              </p>
+              <ul className="max-h-32 space-y-1.5 overflow-y-auto text-sm">
+                {cart.map((item) => (
+                  <li
+                    key={item.productId}
+                    className="flex justify-between gap-2"
+                  >
+                    <span className="min-w-0 truncate">
+                      {item.productName} × {item.quantity}
+                    </span>
+                    <span className="shrink-0 font-medium">
+                      {formatPeso(item.subtotal)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Payment method
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {paymentMethods.map((pm) => (
+                  <button
+                    key={pm.id}
+                    type="button"
+                    onClick={() => onPaymentMethodChange(pm.id)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-lg border p-3 text-xs transition-all",
+                      paymentMethod === pm.id
+                        ? "border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                        : "border-border/50 hover:bg-muted",
+                    )}
+                  >
+                    <pm.Icon className="h-5 w-5" />
+                    {pm.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground">
+                  Discount (₱)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discount || ""}
+                  onChange={(e) =>
+                    onDiscountChange(parseFloat(e.target.value) || 0)
+                  }
+                  className="mt-1"
+                />
+              </div>
+              {paymentMethod === "cash" && (
+                <div>
+                  <label className="text-xs text-muted-foreground">
+                    Binayaran (₱)
+                  </label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amountPaid}
+                    onChange={(e) => onAmountPaidChange(e.target.value)}
+                    className="mt-1"
+                    placeholder={formatPeso(total)}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span>{formatPeso(subtotal)}</span>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between text-emerald-600">
+                  <span>Discount</span>
+                  <span>-{formatPeso(discount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tax (12%)</span>
+                <span>{formatPeso(tax)}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total</span>
+                <span className="text-indigo-600 dark:text-indigo-400">
+                  {formatPeso(total)}
+                </span>
+              </div>
+              {paymentMethod === "cash" && paid >= total && (
+                <div className="flex justify-between text-emerald-600">
+                  <span>Change</span>
+                  <span>{formatPeso(change)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 border-t border-border/50 px-6 py-4 sm:flex-col">
+            <Button
+              className="h-12 w-full bg-gradient-to-r from-indigo-500 to-violet-600 text-base"
+              onClick={handleCompleteCheckout}
+              disabled={cashAmountInvalid || checkoutLoading}
+            >
+              {checkoutLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Sinesave...
+                </>
+              ) : (
+                <>Complete Transaction — {formatPeso(total)}</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full"
+              onClick={() => setPaymentOpen(false)}
+            >
+              Back to order
+            </Button>
+            <Button
+              variant="outline"
+              className="h-11 w-full border-red-500/30 text-red-600 hover:bg-red-500/10"
+              onClick={requestCancelTransaction}
+            >
+              Cancel Transaction
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
         <DialogContent className="sm:max-w-md">
