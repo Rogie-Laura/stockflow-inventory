@@ -6,15 +6,11 @@ import { RefreshCw } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-type PairPayload = {
-  v: 1;
-  code: string;
-  api: string;
-};
+import { getMonitorPairUrl } from "@/lib/monitor-install";
 
 export function MonitorPairQr() {
-  const [payload, setPayload] = useState<PairPayload | null>(null);
+  const [pairUrl, setPairUrl] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(null);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,16 +35,14 @@ export function MonitorPairQr() {
         return;
       }
 
-      const api =
+      const origin =
         typeof window !== "undefined"
           ? window.location.origin
           : "https://inventorysystem-lemon.vercel.app";
 
-      setPayload({
-        v: 1,
-        code: row.code as string,
-        api,
-      });
+      const pairingCode = row.code as string;
+      setCode(pairingCode);
+      setPairUrl(getMonitorPairUrl(origin, pairingCode));
       setExpiresAt(new Date(row.expires_at as string));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Pairing failed");
@@ -63,38 +57,38 @@ export function MonitorPairQr() {
     return () => clearInterval(interval);
   }, [refresh]);
 
-  const qrValue = payload ? JSON.stringify(payload) : "";
+  const qrValue = pairUrl ?? "";
 
   return (
     <Card className="mt-6 border-emerald-500/25 bg-card/80">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">
-          Login QR (sa app lang)
+          Login QR
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          <strong>Huwag</strong> i-scan ng phone camera — para sa{" "}
-          <strong>PinoyStock Monitor app</strong> → Scan QR. Bagong code ~3 min.
+          Puwedeng i-scan ng camera (bubuksan ang link) o sa app → Scan QR.
+          Bagong code ~3 min.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
         <div className="rounded-xl bg-white p-4">
-          {loading && !payload ? (
+          {loading && !pairUrl ? (
             <div className="flex h-[180px] w-[180px] items-center justify-center text-sm text-muted-foreground">
               Loading…
             </div>
-          ) : payload ? (
+          ) : pairUrl ? (
             <QRCode value={qrValue} size={180} />
           ) : null}
         </div>
         <div className="flex-1 space-y-3 text-sm">
           {error ? (
             <p className="text-red-500">{error}</p>
-          ) : payload ? (
+          ) : code ? (
             <>
               <p>
                 Manual code:{" "}
                 <span className="font-mono text-lg font-bold tracking-widest">
-                  {payload.code}
+                  {code}
                 </span>
               </p>
               {expiresAt ? (

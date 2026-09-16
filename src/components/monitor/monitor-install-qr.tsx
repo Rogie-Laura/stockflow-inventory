@@ -20,8 +20,8 @@ export function MonitorInstallQr() {
           I-scan para i-install ang app
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          Gamitin ang <strong>camera ng phone</strong> (hindi login QR). Bubuksan
-          ang download / Play Store — hindi homepage.
+          I-scan ng <strong>camera</strong> → direktang{" "}
+          <strong>download ng APK</strong> (hindi JSON, hindi homepage).
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-3 sm:items-start">

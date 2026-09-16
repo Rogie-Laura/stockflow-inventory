@@ -3,14 +3,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../utils/env_config.dart';
+
 class PairingService {
   PairingService({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
-  /// Parses QR JSON `{ "v": 1, "code": "...", "api": "https://..." }`.
   static PairQrPayload? parseQr(String raw) {
     final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+
+    final fromUrl = _parseUrl(trimmed);
+    if (fromUrl != null) return fromUrl;
+
     try {
       final map = jsonDecode(trimmed) as Map<String, dynamic>;
       if (map['v'] != 1) return null;
@@ -23,6 +29,27 @@ class PairingService {
     } catch (_) {
       return null;
     }
+  }
+
+  static PairQrPayload? _parseUrl(String raw) {
+    final uri = Uri.tryParse(raw);
+    if (uri == null) return null;
+
+    final code = uri.queryParameters['c']?.trim();
+    if (code == null || code.isEmpty) return null;
+
+    var apiBase = uri.queryParameters['api']?.trim();
+    if (apiBase == null || apiBase.isEmpty) {
+      if (uri.scheme == 'pinoystockmonitor') {
+        apiBase = EnvConfig.pairApiBase;
+      } else if (uri.scheme == 'http' || uri.scheme == 'https') {
+        apiBase = uri.origin;
+      }
+    }
+
+    if (apiBase == null || apiBase.isEmpty) return null;
+
+    return PairQrPayload(code: code.toUpperCase(), apiBase: apiBase);
   }
 
   Future<void> exchangeAndSignIn(PairQrPayload payload) async {

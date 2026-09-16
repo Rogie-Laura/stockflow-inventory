@@ -11,6 +11,12 @@ class EnvConfig {
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 
+  /// PinoyStock web origin (Vercel) for `/api/mobile/pair/exchange`.
+  static String get pairApiBase =>
+      dotenv.maybeGet('PAIR_API_BASE')?.trim() ??
+      dotenv.maybeGet('PINOYSTOCK_WEB_URL')?.trim() ??
+      '';
+
   static String get unityAndroidGameId =>
       dotenv.maybeGet('UNITY_ANDROID_GAME_ID')?.trim() ?? '';
 

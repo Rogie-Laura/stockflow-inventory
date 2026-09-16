@@ -4,40 +4,26 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Download, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  getMonitorApkUrl,
-  getMonitorPlayStoreUrl,
-} from "@/lib/monitor-install";
+import { getMonitorApkFileUrl } from "@/lib/monitor-install";
 
 export default function MobileInstallPage() {
-  const [attemptedAuto, setAttemptedAuto] = useState(false);
-
-  const playStoreUrl = getMonitorPlayStoreUrl();
-  const apkUrl = useMemo(() => {
-    if (typeof window === "undefined") return getMonitorApkUrl();
-    return getMonitorApkUrl(window.location.origin);
-  }, []);
-
-  const downloadUrl = playStoreUrl || apkUrl;
+  const [origin, setOrigin] = useState("https://inventorysystem-lemon.vercel.app");
 
   useEffect(() => {
-    if (attemptedAuto || !downloadUrl) return;
+    setOrigin(window.location.origin);
+  }, []);
 
+  const apkUrl = useMemo(() => getMonitorApkFileUrl(origin), [origin]);
+  const hasEnvApk = Boolean(
+    process.env.NEXT_PUBLIC_MONITOR_APK_URL?.trim()
+  );
+
+  useEffect(() => {
     const ua = navigator.userAgent || "";
-    const isAndroid = /android/i.test(ua);
-    const isIos = /iphone|ipad|ipod/i.test(ua);
-
-    if (isAndroid && apkUrl) {
-      setAttemptedAuto(true);
-      window.location.href = apkUrl;
-      return;
-    }
-
-    if (isIos && playStoreUrl) {
-      setAttemptedAuto(true);
-      window.location.href = playStoreUrl;
-    }
-  }, [attemptedAuto, apkUrl, playStoreUrl, downloadUrl]);
+    if (!/android/i.test(ua)) return;
+    if (!hasEnvApk) return;
+    window.location.href = apkUrl;
+  }, [apkUrl, hasEnvApk]);
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-12">
@@ -47,28 +33,30 @@ export default function MobileInstallPage() {
         </div>
         <h1 className="text-xl font-bold">PinoyStock Monitor</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          I-install ang app sa Android. Pagkatapos, sa web Monitor i-scan ang{" "}
-          <strong>Login QR</strong> gamit ang app (hindi phone camera).
+          Sideload APK (walang Play Store). Pag na-install, gamitin ang Login QR
+          sa web Monitor sa loob ng app.
         </p>
 
-        {downloadUrl ? (
-          <Button className="mt-6 w-full" size="lg" asChild>
-            <a href={downloadUrl} download={!playStoreUrl}>
-              <Download className="mr-2 h-5 w-5" />
-              {playStoreUrl ? "Open Play Store" : "Download APK"}
-            </a>
-          </Button>
-        ) : (
-          <p className="mt-6 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-3 text-sm text-amber-900 dark:text-amber-200">
-            APK hindi pa naka-host. Admin: i-upload ang release APK at i-set ang{" "}
-            <code className="text-xs">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
-            Vercel.
+        <Button className="mt-6 w-full" size="lg" asChild>
+          <a href={apkUrl} download>
+            <Download className="mr-2 h-5 w-5" />
+            Download APK
+          </a>
+        </Button>
+
+        {!hasEnvApk ? (
+          <p className="mt-4 rounded-lg border border-dashed border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-xs text-amber-900 dark:text-amber-200">
+            Ilagay ang file sa{" "}
+            <code className="text-[11px]">public/downloads/pinoystock-monitor.apk</code>{" "}
+            sa deploy, o i-set ang{" "}
+            <code className="text-[11px]">NEXT_PUBLIC_MONITOR_APK_URL</code> sa
+            Vercel (direct .apk link mula Supabase Storage, etc.).
           </p>
-        )}
+        ) : null}
 
         <p className="mt-6 text-xs text-muted-foreground">
-          Kung blocked ang install: Settings → allow install from this browser /
-          unknown sources.
+          Android: payagan ang install mula sa browser / unknown sources kung
+          hiningi.
         </p>
 
         <Link

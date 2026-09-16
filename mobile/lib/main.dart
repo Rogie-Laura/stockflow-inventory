@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +12,7 @@ import 'screens/access_denied_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/monitor_screen.dart';
 import 'services/monitor_repository.dart';
+import 'services/pairing_service.dart';
 import 'services/unity_ads_service.dart';
 import 'theme/app_theme.dart';
 import 'utils/env_config.dart';
@@ -110,8 +114,50 @@ class _BootstrapAppState extends State<BootstrapApp> {
   }
 }
 
-class RootGate extends StatelessWidget {
+class RootGate extends StatefulWidget {
   const RootGate({super.key});
+
+  @override
+  State<RootGate> createState() => _RootGateState();
+}
+
+class _RootGateState extends State<RootGate> {
+  final _pairing = PairingService();
+  StreamSubscription<Uri>? _linkSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenDeepLinks();
+  }
+
+  @override
+  void dispose() {
+    _linkSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _listenDeepLinks() async {
+    final appLinks = AppLinks();
+    final initial = await appLinks.getInitialLink();
+    if (initial != null) {
+      await _handlePairUri(initial);
+    }
+    _linkSub = appLinks.uriLinkStream.listen(_handlePairUri);
+  }
+
+  Future<void> _handlePairUri(Uri uri) async {
+    final payload = PairingService.parseQr(uri.toString());
+    if (payload == null) return;
+
+    try {
+      await _pairing.exchangeAndSignIn(payload);
+      if (!mounted) return;
+      await context.read<AuthProvider>().bootstrap();
+    } catch (_) {
+      // Login screen / scan can retry
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
