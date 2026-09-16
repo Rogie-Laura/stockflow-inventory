@@ -17,10 +17,29 @@ class AccountLoginService {
     return normalized;
   }
 
+  /// Account QR, plain 10-char code, or web URL with ?n=
+  static String? parseAccountFromQr(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) return null;
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null) {
+      if (uri.scheme == 'pinoystockmonitor' && uri.host == 'login') {
+        return normalizeAccountNumber(uri.queryParameters['n'] ?? '');
+      }
+      final fromQuery = uri.queryParameters['n'];
+      if (fromQuery != null && fromQuery.isNotEmpty) {
+        return normalizeAccountNumber(fromQuery);
+      }
+    }
+
+    return normalizeAccountNumber(trimmed);
+  }
+
   Future<void> signInWithAccountNumber(String accountNumber) async {
     final normalized = normalizeAccountNumber(accountNumber);
     if (normalized == null) {
-      throw Exception('Account number: 10 letters at numbers (hal. A3K9M2P7X1).');
+      throw Exception('Account number: 10 letters at numbers.');
     }
 
     final supabaseUrl = EnvConfig.supabaseUrl.replaceAll(RegExp(r'/+$'), '');

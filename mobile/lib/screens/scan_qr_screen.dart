@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../services/account_login_service.dart';
 import '../services/pairing_service.dart';
 import '../theme/app_theme.dart';
 
@@ -33,18 +34,37 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
     final raw = capture.barcodes.firstOrNull?.rawValue;
     if (raw == null || raw.isEmpty) return;
 
-    final payload = PairingService.parseQr(raw);
-    if (payload == null) {
-      setState(() => _message = 'Hindi valid na PinoyStock QR');
-      return;
-    }
-
     setState(() {
       _busy = true;
       _message = 'Naglo-login…';
     });
 
     try {
+      final account = AccountLoginService.parseAccountFromQr(raw);
+      if (account != null) {
+        final err =
+            await context.read<AuthProvider>().signInWithAccountNumber(account);
+        if (!mounted) return;
+        if (err != null) {
+          setState(() {
+            _busy = false;
+            _message = err;
+          });
+          return;
+        }
+        Navigator.of(context).pop(true);
+        return;
+      }
+
+      final payload = PairingService.parseQr(raw);
+      if (payload == null) {
+        setState(() {
+          _busy = false;
+          _message = 'Hindi valid na QR. Account o Login QR sa web Monitor.';
+        });
+        return;
+      }
+
       await _pairing.exchangeAndSignIn(payload);
       if (!mounted) return;
       await context.read<AuthProvider>().bootstrap();
@@ -54,7 +74,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _message = e.toString();
+        _message = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
@@ -63,7 +83,7 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan QR sa web Monitor'),
+        title: const Text('Scan QR'),
       ),
       body: Column(
         children: [
@@ -89,10 +109,10 @@ class _ScanQrScreenState extends State<ScanQrScreen> {
             padding: const EdgeInsets.all(16),
             child: Text(
               _message ??
-                  'Sa web: Dashboard → Monitor (naka-login). I-scan ang QR doon para same account sa phone.',
+                  'I-scan ang Account QR o Login QR sa web Monitor — walang password.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _message != null && _message!.contains('failed')
+                color: _message != null && _message!.contains('valid')
                     ? Colors.redAccent
                     : Colors.white70,
                 fontSize: 13,

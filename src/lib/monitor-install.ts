@@ -11,7 +11,7 @@ export function getMonitorInstallDownloadPath() {
 const APK_FILENAME = "pinoystock-monitor.apk";
 
 /** Verified release size (arm64 build) — for on-device checks. */
-export const MONITOR_APK_BYTES = 44_265_912;
+export const MONITOR_APK_BYTES = 44_265_324;
 
 /** Link for the Download button on the install page. */
 export function getMonitorApkFileUrl(origin: string) {
@@ -41,6 +41,12 @@ export function getMonitorPairDeepLink(code: string, apiOrigin: string) {
     api: apiOrigin,
   });
   return `pinoystockmonitor://pair?${params.toString()}`;
+}
+
+/** Scanned by Monitor app for passwordless account login. */
+export function getMonitorAccountQrValue(accountNumber: string) {
+  const params = new URLSearchParams({ n: accountNumber.toUpperCase() });
+  return `pinoystockmonitor://login?${params.toString()}`;
 }
 
 export { APK_FILENAME };

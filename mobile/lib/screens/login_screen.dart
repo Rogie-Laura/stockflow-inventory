@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import 'scan_qr_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,6 +28,17 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+    }
+  }
+
+  Future<void> _openScan() async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const ScanQrScreen()),
+    );
+    if (ok == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Naka-login na!')),
+      );
     }
   }
 
@@ -60,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Ilagay ang 10-character Account Number mula sa web (avatar menu). Walang password.',
+                'Account number lang — o Scan QR sa web Monitor. Walang password.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -80,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 onSubmitted: (_) => _submit(),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -95,7 +107,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 22,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Sign in'),
+                      : const Text('OK'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: loading ? null : _openScan,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan QR (Account o Login)'),
                 ),
               ),
               const Spacer(flex: 3),

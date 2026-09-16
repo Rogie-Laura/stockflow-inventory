@@ -38,33 +38,29 @@ class PairingService {
     final code = uri.queryParameters['c']?.trim();
     if (code == null || code.isEmpty) return null;
 
-    var apiBase = uri.queryParameters['api']?.trim();
-    if (apiBase == null || apiBase.isEmpty) {
-      if (uri.scheme == 'pinoystockmonitor') {
-        apiBase = EnvConfig.pairApiBase;
-      } else if (uri.scheme == 'http' || uri.scheme == 'https') {
-        apiBase = uri.origin;
-      }
-    }
-
-    if (apiBase == null || apiBase.isEmpty) return null;
-
-    return PairQrPayload(code: code.toUpperCase(), apiBase: apiBase);
+    return PairQrPayload(code: code.toUpperCase());
   }
 
   Future<void> exchangeAndSignIn(PairQrPayload payload) async {
-    final uri = Uri.parse('${payload.apiBase}/api/mobile/pair/exchange');
+    final supabaseUrl = EnvConfig.supabaseUrl.replaceAll(RegExp(r'/+$'), '');
+    final anon = EnvConfig.supabaseAnonKey;
+    if (supabaseUrl.isEmpty || anon.isEmpty) {
+      throw Exception('Missing Supabase config sa app.');
+    }
+
+    final uri = Uri.parse('$supabaseUrl/functions/v1/mobile-pair-exchange');
     final response = await _client.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $anon',
+        'apikey': anon,
+      },
       body: jsonEncode({'code': payload.code}),
     );
 
     if (response.statusCode != 200) {
-      final body = response.body;
-      throw Exception(
-        'Pairing failed (${response.statusCode}): $body',
-      );
+      throw Exception(_errorMessage(response));
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -80,11 +76,20 @@ class PairingService {
       type: OtpType.magiclink,
     );
   }
+
+  String _errorMessage(http.Response response) {
+    try {
+      final map = jsonDecode(response.body) as Map<String, dynamic>;
+      final err = map['error']?.toString();
+      if (err != null && err.isNotEmpty) return err;
+    } catch (_) {}
+    return 'Pairing failed (${response.statusCode})';
+  }
 }
 
 class PairQrPayload {
-  PairQrPayload({required this.code, required this.apiBase});
+  PairQrPayload({required this.code, this.apiBase});
 
   final String code;
-  final String apiBase;
+  final String? apiBase;
 }

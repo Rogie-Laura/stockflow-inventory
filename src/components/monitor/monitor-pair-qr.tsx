@@ -66,8 +66,8 @@ export function MonitorPairQr() {
           Login QR
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          Puwedeng i-scan ng camera (bubuksan ang link) o sa app → Scan QR.
-          Bagong code ~3 min.
+          Sa app: <strong>Scan QR</strong> — instant login, walang password. Bagong
+          code ~3 min.
         </p>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
