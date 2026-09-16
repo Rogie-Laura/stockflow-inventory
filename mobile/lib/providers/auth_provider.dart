@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../services/account_login_service.dart';
 import '../services/monitor_repository.dart';
 
 class AuthProvider extends ChangeNotifier {
-  AuthProvider(this._repo);
+  AuthProvider(this._repo, {AccountLoginService? accountLogin})
+      : _accountLogin = accountLogin ?? AccountLoginService();
 
   final MonitorRepository _repo;
+  final AccountLoginService _accountLogin;
 
   StoreContext? _store;
   bool _loading = false;
@@ -35,31 +38,13 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<String?> signInWithAccountNumber(
-    String accountNumber,
-    String password,
-  ) async {
-    final trimmed = accountNumber.trim();
-    if (trimmed.isEmpty) {
-      return 'Ilagay ang account number mula sa web (avatar menu).';
-    }
-
+  Future<String?> signInWithAccountNumber(String accountNumber) async {
     _loading = true;
     _error = null;
     notifyListeners();
 
     try {
-      final email = await Supabase.instance.client.rpc(
-        'inv_lookup_monitor_login',
-        params: {'p_account_number': trimmed},
-      );
-      if (email == null || (email is String && email.isEmpty)) {
-        return 'Hindi valid ang account number o walang Monitor access.';
-      }
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: email as String,
-        password: password,
-      );
+      await _accountLogin.signInWithAccountNumber(accountNumber);
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) return 'Login failed';
       await _loadStore(user.id);
@@ -68,33 +53,7 @@ class AuthProvider extends ChangeNotifier {
       _error = e.message;
       return e.message;
     } catch (e) {
-      _error = e.toString();
-      return _error;
-    } finally {
-      _loading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<String?> signIn(String email, String password) async {
-    _loading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: email.trim(),
-        password: password,
-      );
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) return 'Login failed';
-      await _loadStore(user.id);
-      return null;
-    } on AuthException catch (e) {
-      _error = e.message;
-      return e.message;
-    } catch (e) {
-      _error = e.toString();
+      _error = e.toString().replaceFirst('Exception: ', '');
       return _error;
     } finally {
       _loading = false;

@@ -36,7 +36,9 @@ Mobile **Monitoring Center** for PinoyStock — full analytics, Supabase live da
 2. I-scan ang **login QR** sa Flutter app → **Scan QR (web Monitor)**.
 3. One-time code (~3 min); auto-login same account.
 
-**Vercel:** idagdag `SUPABASE_SERVICE_ROLE_KEY` (Settings → API → service role) para gumana ang `/api/mobile/pair/exchange`. Huwag i-expose sa client.
+**Monitor login:** tumatawag sa Supabase Edge Function `mobile-account-login` (anon key lang sa app). Hindi kailangan ang `SUPABASE_SERVICE_ROLE_KEY` sa Vercel para dito.
+
+**QR pair (optional):** kailangan `SUPABASE_SERVICE_ROLE_KEY` sa Vercel para sa `/api/mobile/pair/exchange`, o i-deploy din ang edge equivalent.
 
 **Install QR:** kapag may `NEXT_PUBLIC_MONITOR_PLAY_STORE_URL` o `NEXT_PUBLIC_MONITOR_APK_URL` sa Vercel, may hiwalay na QR sa web para download.
 

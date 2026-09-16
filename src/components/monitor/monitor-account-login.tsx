@@ -22,8 +22,9 @@ export function MonitorAccountLogin() {
           Login sa Monitor app
         </CardTitle>
         <p className="text-sm font-normal text-muted-foreground">
-          Pagkatapos i-install ang APK, ilagay ang <strong>Account Number</strong>{" "}
-          at password ng web account mo. Makikita rin ito sa avatar (D1) sa taas.
+          Pagkatapos i-install ang APK, ilagay lang ang{" "}
+          <strong>10-character Account Number</strong> (letters + numbers). Makikita
+          sa avatar (D1) sa taas — walang password sa Monitor app.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">

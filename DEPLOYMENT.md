@@ -47,6 +47,10 @@ In [Supabase Auth Settings](https://supabase.com/dashboard/project/spwrebtvdolfq
 NEXT_PUBLIC_SUPABASE_URL=https://spwrebtvdolfqeolmwbe.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<from Supabase Settings → API>
 
+# Optional on Vercel — Monitor account login uses Supabase Edge Function `mobile-account-login`
+# (service role is injected there automatically). Only needed if you use `/api/mobile/pair/exchange` on Vercel.
+SUPABASE_SERVICE_ROLE_KEY=<service_role secret — never expose to client or commit>
+
 # PayMongo GCash billing (same merchant as Pinoy-Up / scalper — reuse sk_test from c:/scalper/supabase/.env.paymongo)
 PAYMONGO_SECRET_KEY=sk_test_xxx or sk_live_xxx
 PAYMONGO_WEBHOOK_SECRET=whsk_xxx   # signing secret for THIS app's webhook URL only

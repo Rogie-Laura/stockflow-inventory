@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -13,21 +14,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _accountNumber = TextEditingController();
-  final _password = TextEditingController();
 
   @override
   void dispose() {
     _accountNumber.dispose();
-    _password.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     final auth = context.read<AuthProvider>();
-    final err = await auth.signInWithAccountNumber(
-      _accountNumber.text,
-      _password.text,
-    );
+    final err = await auth.signInWithAccountNumber(_accountNumber.text);
     if (!mounted) return;
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
@@ -64,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Ilagay ang Account Number mula sa web (i-click ang avatar sa taas).',
+                'Ilagay ang 10-character Account Number mula sa web (avatar menu). Walang password.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
@@ -74,16 +70,14 @@ class _LoginScreenState extends State<LoginScreen> {
               const Spacer(flex: 2),
               TextField(
                 controller: _accountNumber,
-                keyboardType: TextInputType.number,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+                  LengthLimitingTextInputFormatter(10),
+                ],
                 decoration: const InputDecoration(
-                  hintText: 'Account number (8 digits)',
+                  hintText: 'Account number (10 chars)',
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _password,
-                obscureText: true,
-                decoration: const InputDecoration(hintText: 'Password'),
                 onSubmitted: (_) => _submit(),
               ),
               const SizedBox(height: 20),

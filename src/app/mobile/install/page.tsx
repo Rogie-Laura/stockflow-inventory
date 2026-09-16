@@ -29,7 +29,8 @@ function InstallContent() {
         <h1 className="text-xl font-bold">PinoyStock Monitor</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Sideload APK (walang Play Store). Pag na-install, login gamit ang{" "}
-          <strong>Account Number</strong> sa web (avatar sa taas).
+          <strong>10-character Account Number</strong> sa web (avatar) — walang
+          password.
         </p>
 
         {!apkMissing ? (

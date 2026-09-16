@@ -125,7 +125,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<StoreMember[]>([]);
   const [displayName, setDisplayName] = useState("Demo Admin");
   const [accountNumber, setAccountNumber] = useState<string | null>(
-    isDemoMode ? "48291736" : null
+    isDemoMode ? "K7M3NP2X9A" : null
   );
   const [posOperatorName, setPosOperatorName] = useState<string | null>(null);
   const [selectedTerminal, setSelectedTerminalState] = useState<PosTerminal | null>(null);
