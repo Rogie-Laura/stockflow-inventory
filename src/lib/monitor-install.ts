@@ -11,10 +11,10 @@ export function getMonitorInstallDownloadPath() {
 const APK_FILENAME = "pinoystock-monitor.apk";
 
 /** Bump when replacing public/downloads APK (cache bust on phones). */
-export const MONITOR_APK_VERSION = "1.0.1";
+export const MONITOR_APK_VERSION = "1.0.2";
 
 /** Verified release size (arm64 build) — for on-device checks. */
-export const MONITOR_APK_BYTES = 22_039_867;
+export const MONITOR_APK_BYTES = 22_041_572;
 
 /** Opens installed app from browser (launcher shortcut). */
 export const MONITOR_APP_OPEN_URL = "pinoystockmonitor://open";
@@ -37,7 +37,7 @@ export function getMonitorApkDirectUrl(origin: string) {
   return url.toString();
 }
 
-/** QR → install page (manual tap — no auto download loop). */
+/** Generic install QR (no account). Prefer getMobileJoinUrl when account is known. */
 export function getMonitorInstallQrUrl(origin: string) {
   return new URL(getMonitorInstallPagePath(), origin).toString();
 }
@@ -59,6 +59,21 @@ export function getMonitorPairDeepLink(code: string, apiOrigin: string) {
 export function getMonitorAccountQrValue(accountNumber: string) {
   const params = new URLSearchParams({ n: accountNumber.toUpperCase() });
   return `pinoystockmonitor://login?${params.toString()}`;
+}
+
+const JOIN_ACCOUNT_RE = /^[A-Z0-9]{10}$/;
+
+export function normalizeJoinAccountNumber(raw: string): string | null {
+  const n = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!JOIN_ACCOUNT_RE.test(n)) return null;
+  return n;
+}
+
+/** Primary account QR: scan → install page bound to this account. */
+export function getMobileJoinUrl(origin: string, accountNumber: string) {
+  const url = new URL("/mobile/join", origin.replace(/\/+$/, "") + "/");
+  url.searchParams.set("n", accountNumber.toUpperCase());
+  return url.toString();
 }
 
 export { APK_FILENAME };

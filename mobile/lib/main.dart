@@ -11,6 +11,7 @@ import 'providers/monitor_provider.dart';
 import 'screens/access_denied_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/monitor_screen.dart';
+import 'services/account_login_service.dart';
 import 'services/monitor_repository.dart';
 import 'services/pairing_service.dart';
 import 'services/unity_ads_service.dart';
@@ -141,12 +142,20 @@ class _RootGateState extends State<RootGate> {
     final appLinks = AppLinks();
     final initial = await appLinks.getInitialLink();
     if (initial != null) {
-      await _handlePairUri(initial);
+      await _handleIncomingUri(initial);
     }
-    _linkSub = appLinks.uriLinkStream.listen(_handlePairUri);
+    _linkSub = appLinks.uriLinkStream.listen(_handleIncomingUri);
   }
 
-  Future<void> _handlePairUri(Uri uri) async {
+  Future<void> _handleIncomingUri(Uri uri) async {
+    if (!mounted) return;
+
+    final account = AccountLoginService.parseAccountFromQr(uri.toString());
+    if (account != null) {
+      await context.read<AuthProvider>().signInWithAccountNumber(account);
+      return;
+    }
+
     final payload = PairingService.parseQr(uri.toString());
     if (payload == null) return;
 

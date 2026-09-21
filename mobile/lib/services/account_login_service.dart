@@ -24,7 +24,11 @@ class AccountLoginService {
 
     final uri = Uri.tryParse(trimmed);
     if (uri != null) {
-      if (uri.scheme == 'pinoystockmonitor' && uri.host == 'login') {
+      if (uri.scheme == 'pinoystockmonitor' &&
+          (uri.host == 'login' || uri.host == 'open')) {
+        return normalizeAccountNumber(uri.queryParameters['n'] ?? '');
+      }
+      if (uri.path.contains('/mobile/join')) {
         return normalizeAccountNumber(uri.queryParameters['n'] ?? '');
       }
       final fromQuery = uri.queryParameters['n'];

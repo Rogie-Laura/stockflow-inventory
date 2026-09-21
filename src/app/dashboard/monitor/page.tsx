@@ -14,7 +14,6 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { LiveIndicator } from "@/components/monitor/live-indicator";
 import { MonitorInstallQr } from "@/components/monitor/monitor-install-qr";
 import { MonitorAccountLogin } from "@/components/monitor/monitor-account-login";
-import { MonitorPairQr } from "@/components/monitor/monitor-pair-qr";
 import { useInventory } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
 import { computeSalesChangePercent } from "@/lib/sales-analytics";
@@ -55,7 +54,7 @@ export default function MonitorPage() {
     <>
       <Header
         title="Monitoring Dashboard"
-        subtitle="Summary sa web — full dashboard sa PinoyStock Monitor app"
+        subtitle="Stats dito sa web — sa phone: Monitor app (stats lang) via QR sa Settings"
       />
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -103,7 +102,6 @@ export default function MonitorPage() {
           <MonitorInstallQr />
           <MonitorAccountLogin />
         </div>
-        <MonitorPairQr />
       </main>
     </>
   );

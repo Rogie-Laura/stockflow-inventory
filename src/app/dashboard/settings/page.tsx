@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { MobileStatsQr } from "@/components/account/mobile-stats-qr";
 import { useStore } from "@/context/store-context";
 import { toast } from "sonner";
 
@@ -93,6 +94,8 @@ export default function SettingsPage() {
 
       <main className="flex-1 overflow-y-auto p-4 sm:p-6">
         <div className="mx-auto max-w-2xl space-y-6">
+          <MobileStatsQr />
+
           {canManageTeam && (
             <Card className="border-emerald-500/20 bg-emerald-500/5">
               <CardHeader>
