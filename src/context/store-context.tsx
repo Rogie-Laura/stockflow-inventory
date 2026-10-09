@@ -400,7 +400,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const ctx = await fetchStoreContext(
+      let ctx = await fetchStoreContext(
         supabase,
         user.id,
         user.email,
@@ -408,8 +408,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       );
 
       if (!ctx) {
-        toast.error("Walang store na naka-link sa account mo.");
-        return;
+        const fullName =
+          (user.user_metadata?.full_name as string | undefined) ?? undefined;
+        const { error: bootstrapError } = await supabase.rpc(
+          "inv_ensure_my_store",
+          { p_full_name: fullName ?? null }
+        );
+        if (bootstrapError) {
+          toast.error("Walang store sa account — hindi ma-auto-setup.");
+          return;
+        }
+        ctx = await fetchStoreContext(
+          supabase,
+          user.id,
+          user.email,
+          user.user_metadata?.full_name as string | undefined
+        );
+        if (!ctx) {
+          toast.error("Walang store na naka-link sa account mo.");
+          return;
+        }
       }
 
       setStore(ctx.store);

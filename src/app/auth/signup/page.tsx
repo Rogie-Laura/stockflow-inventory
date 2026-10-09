@@ -67,22 +67,65 @@ export default function SignupPage() {
     });
 
     if (error) {
-      toast.error(error.message);
+      const msg = error.message.toLowerCase();
+      if (
+        error.status === 422 ||
+        msg.includes("already registered") ||
+        msg.includes("already exists")
+      ) {
+        toast.error(
+          "May account na sa email na ito. Mag-login na lang, o gumamit ng ibang email."
+        );
+      } else if (msg.includes("password")) {
+        toast.error(
+          "Hindi tinanggap ang password (min. 6 characters, mas mahaba mas ok)."
+        );
+      } else {
+        toast.error(error.message);
+      }
       setLoading(false);
       return;
     }
 
-    if (data.session) {
+    async function finishSignup() {
+      const { error: bootstrapError } = await supabase.rpc("inv_ensure_my_store", {
+        p_full_name: fullName,
+      });
+      if (bootstrapError) {
+        toast.error(
+          `Account ok pero hindi nagawa ang store: ${bootstrapError.message}`
+        );
+        setLoading(false);
+        return;
+      }
       toast.success(
         "Welcome! 3 araw free trial — pwede ka nang mag-POS at inventory."
       );
       router.push("/dashboard");
       router.refresh();
+    }
+
+    if (data.session) {
+      await finishSignup();
+      setLoading(false);
       return;
     }
 
-    toast.success("Account created! Pwede ka nang mag-login.");
-    router.push("/auth/login");
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (loginError) {
+      toast.success(
+        "Account created! Subukang mag-login — kung may error, i-check ang email."
+      );
+      router.push("/auth/login");
+      setLoading(false);
+      return;
+    }
+
+    await finishSignup();
+    setLoading(false);
   }
 
   return (
