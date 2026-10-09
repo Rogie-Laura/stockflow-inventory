@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,32 +34,87 @@ import {
   normalizeProductUnit,
 } from "@/lib/product-units";
 import { ConfirmYesNoDialog } from "@/components/ui/confirm-yes-no-dialog";
+import type { Product } from "@/types/inventory";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
-const UNIT_DATALIST_ID = "product-unit-options";
-const MARGIN_DATALIST_ID = "product-margin-options";
+type ProductFormState = {
+  name: string;
+  sku: string;
+  categoryId: string;
+  unit: string;
+  cost: string;
+  marginPercent: string;
+  sellingPrice: string;
+  quantity: string;
+  minStock: string;
+  description: string;
+  image: string;
+};
 
-export function ProductDialog() {
-  const { categories, addProduct } = useInventory();
+const EMPTY_FORM: ProductFormState = {
+  name: "",
+  sku: "",
+  categoryId: "",
+  unit: "pc",
+  cost: "",
+  marginPercent: "",
+  sellingPrice: "",
+  quantity: "",
+  minStock: "",
+  description: "",
+  image: "📦",
+};
+
+function productToForm(product: Product): ProductFormState {
+  return {
+    name: product.name,
+    sku: product.sku,
+    categoryId: product.categoryId,
+    unit: product.unit || "pc",
+    cost: product.cost > 0 ? String(product.cost) : "",
+    marginPercent:
+      product.marginPercent > 0 ? String(product.marginPercent) : "",
+    sellingPrice: String(product.price),
+    quantity: String(product.quantity),
+    minStock: String(product.minStock),
+    description: product.description ?? "",
+    image: product.image || "📦",
+  };
+}
+
+function ProductFormDialog({
+  mode,
+  product,
+  open,
+  onOpenChange,
+  trigger,
+}: {
+  mode: "create" | "edit";
+  product?: Product;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  trigger?: ReactNode;
+}) {
+  const { categories, addProduct, updateProduct } = useInventory();
   const { store } = useStore();
   const showMarginSuggestion = store?.useMarginPricing ?? true;
-  const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    sku: "",
-    categoryId: "",
-    unit: "pc",
-    cost: "",
-    marginPercent: "",
-    sellingPrice: "",
-    quantity: "",
-    minStock: "",
-    description: "",
-    image: "📦",
-  });
+  const [form, setForm] = useState<ProductFormState>(EMPTY_FORM);
+
+  const listSuffix = mode === "edit" && product ? product.id : "new";
+  const unitListId = `product-unit-options-${listSuffix}`;
+  const marginListId = `product-margin-options-${listSuffix}`;
+
+  useEffect(() => {
+    if (!open) return;
+    if (mode === "edit" && product) {
+      setForm(productToForm(product));
+    } else if (mode === "create") {
+      setForm(EMPTY_FORM);
+    }
+  }, [open, mode, product]);
 
   const costValue = parseFloat(form.cost) || 0;
   const marginValue = parseFloat(form.marginPercent) || 0;
@@ -71,12 +126,16 @@ export function ProductDialog() {
   }, [costValue, marginValue]);
 
   const profitAmount = useMemo(
-    () => (costValue > 0 && sellingPrice > 0 ? calcProfitAmount(costValue, sellingPrice) : 0),
+    () =>
+      costValue > 0 && sellingPrice > 0
+        ? calcProfitAmount(costValue, sellingPrice)
+        : 0,
     [costValue, sellingPrice],
   );
 
   const impliedMarginOnPrice = useMemo(() => {
-    if (costValue <= 0 || sellingPrice <= 0 || sellingPrice <= costValue) return null;
+    if (costValue <= 0 || sellingPrice <= 0 || sellingPrice <= costValue)
+      return null;
     const pct = ((sellingPrice - costValue) / sellingPrice) * 100;
     return Math.round(pct * 10) / 10;
   }, [costValue, sellingPrice]);
@@ -91,7 +150,9 @@ export function ProductDialog() {
       return false;
     }
     if (sellingPrice <= 0) {
-      toast.error("Ilagay ang presyo ng bentahan (manual, hindi auto mula sa dropdown)");
+      toast.error(
+        "Ilagay ang presyo ng bentahan (manual, hindi auto mula sa dropdown)",
+      );
       return false;
     }
     if (
@@ -115,63 +176,57 @@ export function ProductDialog() {
     setForm((f) => ({ ...f, sellingPrice: String(suggestedPrice) }));
   }
 
-  async function confirmAddProduct() {
+  async function confirmSave() {
     const marginForDb =
-      marginValue > 0 ? marginValue : impliedMarginOnPrice ?? 0;
+      marginValue > 0 ? marginValue : (impliedMarginOnPrice ?? 0);
+
+    const payload = {
+      name: form.name,
+      sku: form.sku,
+      categoryId: form.categoryId,
+      unit: normalizeProductUnit(form.unit),
+      marginPercent: marginForDb,
+      price: sellingPrice,
+      cost: costValue,
+      quantity: parseInt(form.quantity) || 0,
+      minStock: parseInt(form.minStock) || 10,
+      description: form.description,
+      image: form.image,
+    };
 
     setSaving(true);
     try {
-      await addProduct({
-        name: form.name,
-        sku: form.sku,
-        categoryId: form.categoryId,
-        unit: normalizeProductUnit(form.unit),
-        marginPercent: marginForDb,
-        price: sellingPrice,
-        cost: costValue,
-        quantity: parseInt(form.quantity) || 0,
-        minStock: parseInt(form.minStock) || 10,
-        description: form.description,
-        image: form.image,
-      });
-
-      toast.success("Na-add na ang produkto!");
+      if (mode === "edit" && product) {
+        await updateProduct(product.id, payload);
+        toast.success("Na-update na ang produkto!");
+      } else {
+        await addProduct(payload);
+        toast.success("Na-add na ang produkto!");
+        setForm(EMPTY_FORM);
+      }
       setConfirmOpen(false);
-      setOpen(false);
-      setForm({
-        name: "",
-        sku: "",
-        categoryId: "",
-        unit: "pc",
-        cost: "",
-        marginPercent: "",
-        sellingPrice: "",
-        quantity: "",
-        minStock: "",
-        description: "",
-        image: "📦",
-      });
+      onOpenChange(false);
     } catch {
-      toast.error("Failed to add product");
+      toast.error(
+        mode === "edit" ? "Failed to update product" : "Failed to add product",
+      );
     } finally {
       setSaving(false);
     }
   }
 
   const unitLabel = getUnitLabel(form.unit);
+  const isEdit = mode === "edit";
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button className="bg-gradient-to-r from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-violet-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Product
-          </Button>
-        </DialogTrigger>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {trigger}
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Magdagdag ng Produkto</DialogTitle>
+            <DialogTitle>
+              {isEdit ? "I-edit ang Produkto" : "Magdagdag ng Produkto"}
+            </DialogTitle>
             <DialogDescription>
               Puhunan, tubo %, at presyo — manual input. Presyo sa pesos (₱).
             </DialogDescription>
@@ -179,18 +234,20 @@ export function ProductDialog() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Pangalan ng Produkto *</Label>
+                <Label htmlFor={`name-${listSuffix}`}>
+                  Pangalan ng Produkto *
+                </Label>
                 <Input
-                  id="name"
+                  id={`name-${listSuffix}`}
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="hal. Bigas Dinorado"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sku">SKU / Barcode *</Label>
+                <Label htmlFor={`sku-${listSuffix}`}>SKU / Barcode *</Label>
                 <Input
-                  id="sku"
+                  id={`sku-${listSuffix}`}
                   value={form.sku}
                   onChange={(e) => setForm({ ...form, sku: e.target.value })}
                   placeholder="BRG-001"
@@ -218,10 +275,10 @@ export function ProductDialog() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="unit">Unit / Yunit</Label>
+                <Label htmlFor={`unit-${listSuffix}`}>Unit / Yunit</Label>
                 <DatalistInput
-                  id="unit"
-                  listId={UNIT_DATALIST_ID}
+                  id={`unit-${listSuffix}`}
+                  listId={unitListId}
                   value={form.unit}
                   onChange={(e) => setForm({ ...form, unit: e.target.value })}
                   placeholder="Pumili o i-type (hal. piraso, sachet)"
@@ -230,17 +287,14 @@ export function ProductDialog() {
                     label: u.label,
                   }))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Pwede pumili sa listahan o mag-type ng sariling unit.
-                </p>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="cost">Puhunan / Cost (₱) *</Label>
+                <Label htmlFor={`cost-${listSuffix}`}>Puhunan / Cost (₱) *</Label>
                 <Input
-                  id="cost"
+                  id={`cost-${listSuffix}`}
                   type="number"
                   step="0.01"
                   min="0"
@@ -250,10 +304,10 @@ export function ProductDialog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="marginPercent">Tubo / Margin (%)</Label>
+                <Label htmlFor={`margin-${listSuffix}`}>Tubo / Margin (%)</Label>
                 <DatalistInput
-                  id="marginPercent"
-                  listId={MARGIN_DATALIST_ID}
+                  id={`margin-${listSuffix}`}
+                  listId={marginListId}
                   type="number"
                   step="0.1"
                   min="0"
@@ -265,17 +319,15 @@ export function ProductDialog() {
                   placeholder="hal. 10 — optional"
                   options={MARGIN_OPTIONS.map((pct) => String(pct))}
                 />
-                <p className="text-xs text-muted-foreground">
-                  I-type ang % o pumili mula sa suggestions — hindi ito pipilitin
-                  ang presyo.
-                </p>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="sellingPrice">Presyo ng bentahan (₱) *</Label>
+              <Label htmlFor={`sellingPrice-${listSuffix}`}>
+                Presyo ng bentahan (₱) *
+              </Label>
               <Input
-                id="sellingPrice"
+                id={`sellingPrice-${listSuffix}`}
                 type="number"
                 step="0.01"
                 min="0"
@@ -321,9 +373,11 @@ export function ProductDialog() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity ({unitLabel})</Label>
+                <Label htmlFor={`quantity-${listSuffix}`}>
+                  Quantity ({unitLabel})
+                </Label>
                 <Input
-                  id="quantity"
+                  id={`quantity-${listSuffix}`}
                   type="number"
                   min="0"
                   value={form.quantity}
@@ -334,9 +388,9 @@ export function ProductDialog() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="minStock">Minimum Stock</Label>
+                <Label htmlFor={`minStock-${listSuffix}`}>Minimum Stock</Label>
                 <Input
-                  id="minStock"
+                  id={`minStock-${listSuffix}`}
                   type="number"
                   min="0"
                   value={form.minStock}
@@ -349,9 +403,9 @@ export function ProductDialog() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor={`description-${listSuffix}`}>Description</Label>
               <Textarea
-                id="description"
+                id={`description-${listSuffix}`}
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
@@ -362,14 +416,18 @@ export function ProductDialog() {
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 className="bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700"
               >
-                Add Product
+                {isEdit ? "Save Changes" : "Add Product"}
               </Button>
             </DialogFooter>
           </form>
@@ -379,7 +437,7 @@ export function ProductDialog() {
       <ConfirmYesNoDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        title="I-save ang produktong ito?"
+        title={isEdit ? "I-save ang mga pagbabago?" : "I-save ang produktong ito?"}
         description={
           <span>
             <strong>{form.name || "—"}</strong> ({form.sku || "—"}) · presyo{" "}
@@ -389,8 +447,49 @@ export function ProductDialog() {
         yesLabel="Yes"
         noLabel="No"
         loading={saving}
-        onYes={confirmAddProduct}
+        onYes={confirmSave}
       />
     </>
+  );
+}
+
+export function ProductDialog() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <ProductFormDialog
+      mode="create"
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <DialogTrigger asChild>
+          <Button className="bg-gradient-to-r from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25 hover:from-indigo-600 hover:to-violet-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Product
+          </Button>
+        </DialogTrigger>
+      }
+    />
+  );
+}
+
+export function EditProductDialog({
+  product,
+  open,
+  onOpenChange,
+}: {
+  product: Product | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  if (!product) return null;
+
+  return (
+    <ProductFormDialog
+      mode="edit"
+      product={product}
+      open={open}
+      onOpenChange={onOpenChange}
+    />
   );
 }

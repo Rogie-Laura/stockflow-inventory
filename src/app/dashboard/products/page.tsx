@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { MoreHorizontal, Search, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Search, Trash2 } from "lucide-react";
 import { Header } from "@/components/dashboard/header";
-import { ProductDialog } from "@/components/dashboard/product-dialog";
+import {
+  EditProductDialog,
+  ProductDialog,
+} from "@/components/dashboard/product-dialog";
+import type { Product } from "@/types/inventory";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { useInventory } from "@/context/inventory-context";
 import { formatPeso } from "@/lib/currency";
@@ -29,6 +33,7 @@ import { toast } from "sonner";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { products, categories, deleteProduct } = useInventory();
 
   const filtered = products.filter(
@@ -48,6 +53,14 @@ export default function ProductsPage() {
 
   return (
     <>
+      <EditProductDialog
+        product={editingProduct}
+        open={editingProduct !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingProduct(null);
+        }}
+      />
+
       <Header
         title="Products"
         subtitle={`${products.length} products in inventory`}
@@ -128,7 +141,12 @@ export default function ProductsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Edit</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => setEditingProduct(product)}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() =>

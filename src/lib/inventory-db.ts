@@ -243,6 +243,34 @@ export async function insertProduct(
   return data;
 }
 
+export async function updateProductDb(
+  supabase: SupabaseClient,
+  id: string,
+  product: Omit<Product, "id" | "status" | "createdAt">,
+) {
+  const quantity = product.quantity;
+  const minStock = product.minStock;
+  const { error } = await supabase
+    .from(TABLES.item)
+    .update({
+      name: product.name,
+      sku: product.sku,
+      category_id: product.categoryId || null,
+      supplier_id: product.supplierId || null,
+      unit: product.unit || "pc",
+      margin_percent: product.marginPercent || null,
+      price: product.price,
+      cost: product.cost,
+      quantity,
+      min_stock: minStock,
+      description: product.description,
+      image: product.image,
+    })
+    .eq("id", id);
+
+  if (error) throw error;
+}
+
 export async function deleteProductDb(
   supabase: SupabaseClient,
   id: string

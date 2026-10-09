@@ -23,6 +23,7 @@ import {
   insertCategory,
   insertProduct,
   insertSale,
+  updateProductDb,
 } from "@/lib/inventory-db";
 import { formatPeso } from "@/lib/currency";
 import { useStore } from "@/context/store-context";
@@ -78,7 +79,10 @@ interface InventoryContextValue {
   addProduct: (
     product: Omit<Product, "id" | "status" | "createdAt">
   ) => Promise<void>;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
+  updateProduct: (
+    id: string,
+    product: Omit<Product, "id" | "status" | "createdAt">,
+  ) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
   addCategory: (
     category: Omit<Category, "id" | "productCount">
@@ -289,17 +293,46 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   );
 
   const updateProduct = useCallback(
-    (id: string, updates: Partial<Product>) => {
-      setProducts((prev) =>
-        prev.map((p) => {
-          if (p.id !== id) return p;
-          const updated = { ...p, ...updates };
-          updated.status = getStatus(updated.quantity, updated.minStock);
-          return updated;
-        })
-      );
+    async (
+      id: string,
+      product: Omit<Product, "id" | "status" | "createdAt">,
+    ) => {
+      if (isDemoMode) {
+        setProducts((prev) => {
+          const existing = prev.find((p) => p.id === id);
+          if (!existing) return prev;
+          const oldCategoryId = existing.categoryId;
+          const newCategoryId = product.categoryId;
+          if (oldCategoryId !== newCategoryId) {
+            setCategories((cats) =>
+              cats.map((c) => {
+                if (c.id === oldCategoryId) {
+                  return { ...c, productCount: Math.max(0, c.productCount - 1) };
+                }
+                if (c.id === newCategoryId) {
+                  return { ...c, productCount: c.productCount + 1 };
+                }
+                return c;
+              }),
+            );
+          }
+          return prev.map((p) => {
+            if (p.id !== id) return p;
+            return {
+              ...p,
+              ...product,
+              status: getStatus(product.quantity, product.minStock),
+            };
+          });
+        });
+        return;
+      }
+
+      const supabase = createClient();
+      await updateProductDb(supabase, id, product);
+      await refresh();
     },
-    []
+    [isDemoMode, refresh],
   );
 
   const deleteProduct = useCallback(
