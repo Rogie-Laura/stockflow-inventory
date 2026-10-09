@@ -26,8 +26,8 @@ export default function SettingsPage() {
   const [posPinConfirm, setPosPinConfirm] = useState("");
   const [savingPin, setSavingPin] = useState(false);
   const [useMarginPricing, setUseMarginPricing] = useState(true);
-  const [posVatEnabled, setPosVatEnabled] = useState(true);
-  const [posVatPercent, setPosVatPercent] = useState("12");
+  const [posVatEnabled, setPosVatEnabled] = useState(false);
+  const [posVatPercent, setPosVatPercent] = useState("0");
   const [savingStoreSettings, setSavingStoreSettings] = useState(false);
 
   useEffect(() => {
@@ -172,8 +172,8 @@ export default function SettingsPage() {
                       Kalkulahin ang tubo mula sa %
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      ON: cost + margin % ang presyo. OFF: diretso kang mag-input
-                      ng presyo (pwede nang kasama ang tubo).
+                      ON: may optional na &quot;Gamitin bilang presyo&quot; mula sa
+                      puhunan + tubo %. OFF: manual presyo lang — walang suggestion.
                     </p>
                   </div>
                   <Switch
@@ -198,7 +198,15 @@ export default function SettingsPage() {
                     disabled={savingStoreSettings}
                     onCheckedChange={(checked) => {
                       setPosVatEnabled(checked);
-                      void saveStoreSettings({ posVatEnabled: checked });
+                      if (!checked) {
+                        setPosVatPercent("0");
+                        void saveStoreSettings({
+                          posVatEnabled: false,
+                          posVatPercent: 0,
+                        });
+                      } else {
+                        void saveStoreSettings({ posVatEnabled: true });
+                      }
                     }}
                   />
                 </div>
@@ -220,7 +228,8 @@ export default function SettingsPage() {
                     className="max-w-[140px]"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Default 12%. Palitan kung magbago ang tax rate sa future.
+                    0% = walang dagdag na VAT sa POS. I-off ang switch kung ayaw
+                    ng VAT; pwede ring naka-on pero 0%.
                   </p>
                 </div>
                 <p className="text-xs text-muted-foreground">

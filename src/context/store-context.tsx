@@ -79,8 +79,8 @@ const DEMO_STORE: Store = {
   createdAt: new Date().toISOString(),
   hasPosPin: true,
   useMarginPricing: true,
-  posVatEnabled: true,
-  posVatPercent: 12,
+  posVatEnabled: false,
+  posVatPercent: 0,
 };
 
 const DEMO_TERMINALS: PosTerminal[] = [

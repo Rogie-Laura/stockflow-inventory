@@ -15,7 +15,15 @@ export type ProductUnit = (typeof PRODUCT_UNITS)[number]["value"];
 export const MARGIN_OPTIONS = [5, 8, 10, 11, 12, 15, 20, 25, 30] as const;
 
 export function getUnitLabel(unit: string): string {
-  return PRODUCT_UNITS.find((u) => u.value === unit)?.label ?? unit;
+  const trimmed = unit.trim();
+  if (!trimmed) return "pc";
+  return PRODUCT_UNITS.find((u) => u.value === trimmed)?.label ?? trimmed;
+}
+
+/** Store custom or preset unit (free text allowed). */
+export function normalizeProductUnit(raw: string): string {
+  const trimmed = raw.trim().slice(0, 32);
+  return trimmed || "pc";
 }
 
 /** Tubo as % of selling price (presyo ng paninda). */
